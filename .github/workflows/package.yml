@@ -9,8 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -21,7 +20,6 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-        server-id: github # Configures settings.xml for authentication
 
     - name: Build with Maven
       run: mvn -B package --file pom.xml
@@ -42,71 +40,19 @@ jobs:
         cd deployment
         7z a ../LogSyncPro.7z *
 
-    - name: Publish to GitHub Packages
+    - name: Update Nightly Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Deployment version includes run number and attempt to be unique
-        VERSION="0.1.0-${{ github.run_number }}.${{ github.run_attempt }}"
+        # Delete existing release and tag to simulate a "moving" nightly tag
+        gh release delete nightly --cleanup-tag -y || true
         
-        mvn deploy:deploy-file \
-          -DgroupId=io.github.tijawo68 \
-          -DartifactId=LogSyncPro-Distribution \
-          -Dversion=$VERSION \
-          -Dpackaging=7z \
-          -Dfile=LogSyncPro.7z \
-          -DrepositoryId=github \
-          -Durl=https://maven.pkg.github.com/${{ github.repository }}
-
-    - name: Cleanup Old Packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # List package versions, sorted by date (newest first usually), keep first 3
-        # Requires jq
+        # Give GitHub a moment to propagate deletion if needed
+        sleep 2
         
-        # Package name corresponds to artifactId
-        PACKAGE_NAME="io.github.tijawo68.logsyncpro-distribution"
-        # Note: GitHub Packages Maven names are often lowercase group.artifact
-        
-        # We need to find the correct package name first, sometimes it varies.
-        # Assuming de.in.lsp.LogSyncPro-Distribution -> de.in.lsp.logsyncpro-distribution
-        
-        echo "Fetching versions for $PACKAGE_NAME..."
-        
-        # Get all versions using GH CLI
-        # limit 100 just in case
-        versions=$(gh api \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          /user/packages/maven/$PACKAGE_NAME/versions \
-          --jq 'sort_by(.created_at) | reverse | .[3:] | .[].id')
-          
-        # If the above fails (e.g. org package), we might need orgs/ORG/packages...
-        # Using context ${{ github.repository_owner }} is safer.
-        OWNER="${{ github.repository_owner }}"
-        
-        # Check if user or org
-        TYPE=$(gh api "/users/$OWNER" --jq .type)
-        if [ "$TYPE" == "Organization" ]; then
-            URL="/orgs/$OWNER/packages/maven/$PACKAGE_NAME/versions"
-        else
-            URL="/users/$OWNER/packages/maven/$PACKAGE_NAME/versions"
-        fi
-        
-        echo "Querying $URL"
-        
-        versions_to_delete=$(gh api \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "$URL" \
-          --jq 'sort_by(.created_at) | reverse | .[3:] | .[].id')
-
-        for id in $versions_to_delete; do
-          echo "Deleting version ID $id..."
-          gh api \
-            --method DELETE \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "$URL/$id"
-        done || echo "No versions to delete or error occurred (first run?)"
+        # Create new release
+        gh release create nightly LogSyncPro.7z \
+          --title "Nightly Build" \
+          --notes "Latest build (Run ${{ github.run_number }}) from commit ${{ github.sha }}" \
+          --prerelease \
+          --target ${{ github.sha }}
