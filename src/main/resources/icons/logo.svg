@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Shadow/Glow -->
+  <circle cx="256" cy="256" r="240" fill="url(#paint0_radial)" fill-opacity="0.2"/>
+  
+  <!-- Right Log Document -->
+  <rect x="230" y="100" width="180" height="260" rx="10" fill="#00A6ED" fill-opacity="0.8"/>
+  <rect x="250" y="130" width="140" height="15" rx="3" fill="white" fill-opacity="0.6"/>
+  <rect x="250" y="160" width="100" height="15" rx="3" fill="white" fill-opacity="0.6"/>
+  <rect x="250" y="190" width="120" height="15" rx="3" fill="white" fill-opacity="0.6"/>
+
+  <!-- Left Log Document (Synchronized) -->
+  <rect x="100" y="150" width="180" height="260" rx="10" fill="#7FB800" fill-opacity="0.9" stroke="white" stroke-width="4"/>
+  <rect x="120" y="180" width="140" height="15" rx="3" fill="white" fill-opacity="0.7"/>
+  <rect x="120" y="210" width="110" height="15" rx="3" fill="white" fill-opacity="0.7"/>
+  <rect x="120" y="240" width="130" height="15" rx="3" fill="white" fill-opacity="0.7"/>
+
+  <!-- Sync Arrow Icon Overlay -->
+  <path d="M256 220C289.137 220 316 246.863 316 280C316 286.32 315.021 292.411 313.203 298.125L325 310L286 312L288 273L299.875 284.875C303.805 277.297 306 268.75 306 259.688C306 231.875 283.125 209 255.312 209C227.5 209 204.625 231.875 204.625 259.688C204.625 264.444 205.286 269.049 206.526 273.406L196.481 276.431C194.862 271.045 194 265.361 194 259.488C194 226.351 220.863 199.488 254 199.488V220H256ZM212.125 234.812C208.195 242.39 206 250.938 206 260C206 287.812 228.875 310.688 256.688 310.688C284.5 310.688 307.375 287.812 307.375 260C307.375 255.244 306.714 250.639 305.474 246.281L315.519 243.256C317.138 248.642 318 254.326 318 260.2C318 293.337 291.137 320.2 258 320.2V299.688H256C222.863 299.688 196 272.825 196 239.688C196 233.368 196.979 227.277 198.797 221.562L187 209.688L226 207.688L224 246.688L212.125 234.812Z" fill="#0D2C54"/>
+
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(240)">
+      <stop offset="0" stop-color="#00A6ED"/>
+      <stop offset="1" stop-color="#7FB800" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

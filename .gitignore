@@ -12,3 +12,4 @@ target/
 /exported_samples/
 /logs/
 /*.code-workspace
+/bin
