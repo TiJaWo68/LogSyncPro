@@ -1,0 +1,14 @@
+target/
+*.class
+.project
+.classpath
+.settings/
+.idea/
+*.iml
+*.log
+.DS_Store
+.agent
+/dependency-reduced-pom.xml
+/exported_samples/
+/logs/
+/*.code-workspace
