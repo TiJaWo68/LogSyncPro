@@ -446,7 +446,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     /**
      * Group logs by "App Name" (ignores rotation numbers and common suffixes).
      */
-    private String detectApplicationName(String fileName) {
+    static String detectApplicationName(String fileName) {
         String name = fileName;
         String prev;
 
