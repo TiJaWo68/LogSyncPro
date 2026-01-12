@@ -45,8 +45,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Deployment version includes run number to be unique
-        VERSION="0.1.0-${{ github.run_number }}"
+        # Deployment version includes run number and attempt to be unique
+        VERSION="0.1.0-${{ github.run_number }}.${{ github.run_attempt }}"
         
         mvn deploy:deploy-file \
           -DgroupId=de.in.lsp \
