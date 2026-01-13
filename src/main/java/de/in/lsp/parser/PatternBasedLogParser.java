@@ -35,6 +35,7 @@ public class PatternBasedLogParser implements LogParser {
     private int levelGroup = -1;
     private int threadGroup = -1;
     private int loggerGroup = -1;
+    private int ipGroup = -1;
     private int messageGroup = -1;
 
     public PatternBasedLogParser(String pattern) {
@@ -62,6 +63,9 @@ public class PatternBasedLogParser implements LogParser {
                             i = end;
                         }
                     }
+                } else if (next == 'h') {
+                    regexBuilder.append("(.*?)");
+                    ipGroup = groupCount++;
                 } else if (next == 't') {
                     regexBuilder.append("(.*?)");
                     threadGroup = groupCount++;
@@ -109,17 +113,25 @@ public class PatternBasedLogParser implements LogParser {
                     // skip config
                     i += 5;
                 } else {
-                    regexBuilder.append(Pattern.quote(String.valueOf(next)));
+                    if (next == ' ') {
+                        regexBuilder.append("\\s+");
+                    } else {
+                        regexBuilder.append(Pattern.quote(String.valueOf(next)));
+                    }
                 }
             } else {
-                regexBuilder.append(Pattern.quote(String.valueOf(c)));
+                if (c == ' ') {
+                    regexBuilder.append("\\s+");
+                } else {
+                    regexBuilder.append(Pattern.quote(String.valueOf(c)));
+                }
             }
         }
 
         String finalRegex = regexBuilder.toString().replace("%n", "");
         // System.out.println("Generated Regex: " + finalRegex);
         this.regexPattern = Pattern.compile("^" + finalRegex + "$");
-        this.dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatBuilder.toString());
+        this.dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatBuilder.toString(), java.util.Locale.US);
     }
 
     @Override
@@ -135,37 +147,90 @@ public class PatternBasedLogParser implements LogParser {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             LogEntry lastEntry = null;
+            List<String> headerBuffer = new ArrayList<>();
             while ((line = reader.readLine()) != null) {
-                Matcher matcher = regexPattern.matcher(line);
-                if (matcher.matches()) {
-                    try {
-                        LocalDateTime ts = null;
-                        if (timestampGroup != -1) {
-                            ts = LocalDateTime.parse(matcher.group(timestampGroup).trim(), dateTimeFormatter);
+                // Check if the line matches a NEW entry
+                if (canParse(line)) {
+                    LogEntry newEntry = parseLine(line, sourceName, null);
+                    if (newEntry != null) {
+                        // Flush header buffer if first match
+                        // If this is the first match, flush header buffer as a single multi-line entry
+                        if (lastEntry == null && !headerBuffer.isEmpty()) {
+                            String combinedHeader = String.join("\n", headerBuffer);
+                            entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader,
+                                    sourceName, combinedHeader));
+                            headerBuffer.clear();
                         }
-
-                        String level = (levelGroup != -1) ? matcher.group(levelGroup).trim() : "UNKNOWN";
-                        String thread = (threadGroup != -1) ? matcher.group(threadGroup).trim() : "UNKNOWN";
-                        String logger = (loggerGroup != -1) ? matcher.group(loggerGroup).trim() : "UNKNOWN";
-                        String message = (messageGroup != -1) ? matcher.group(messageGroup) : line;
-
-                        lastEntry = new LogEntry(ts, level, thread, logger, message, sourceName, line);
-                        entries.add(lastEntry);
-                    } catch (Exception e) {
-                        // If parsing fails for a line that matches the regex, treat it as multiline
+                        entries.add(newEntry);
+                        lastEntry = newEntry;
+                    } else {
+                        // Regex matched but parse failed (e.g. date)
                         if (lastEntry != null) {
                             lastEntry = lastEntry.appendMessage("\n" + line);
                             entries.set(entries.size() - 1, lastEntry);
+                        } else {
+                            headerBuffer.add(line);
                         }
                     }
                 } else if (lastEntry != null) {
-                    // Append continuation line to previous entry
+                    // Continuation
                     lastEntry = lastEntry.appendMessage("\n" + line);
                     entries.set(entries.size() - 1, lastEntry);
+                } else {
+                    // Initial header
+                    headerBuffer.add(line);
                 }
+            }
+            // If we NEVER found a match, but have headers, add them as one entry
+            if (lastEntry == null && !headerBuffer.isEmpty()) {
+                String combinedHeader = String.join("\n", headerBuffer);
+                entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader, sourceName,
+                        combinedHeader));
             }
         }
         return entries;
+    }
+
+    /**
+     * Parses a single line.
+     * If the line matches the pattern, a new LogEntry is returned.
+     * If the line does not match but lastEntry is provided, it is appended to
+     * lastEntry and the updated entry is returned.
+     * Otherwise returns null.
+     */
+    public LogEntry parseLine(String line, String sourceName, LogEntry lastEntry) {
+        Matcher matcher = regexPattern.matcher(line);
+        if (matcher.matches()) {
+            try {
+                LocalDateTime ts = null;
+                if (timestampGroup != -1) {
+                    String tsStr = matcher.group(timestampGroup).trim();
+                    ts = LocalDateTime.parse(tsStr, dateTimeFormatter);
+                }
+
+                String level = (levelGroup != -1) ? matcher.group(levelGroup).trim() : "UNKNOWN";
+                String thread = (threadGroup != -1) ? matcher.group(threadGroup).trim() : "UNKNOWN";
+                String logger = (loggerGroup != -1) ? matcher.group(loggerGroup).trim() : "UNKNOWN";
+                String ip = (ipGroup != -1) ? matcher.group(ipGroup).trim() : "UNKNOWN";
+                String message = (messageGroup != -1) ? matcher.group(messageGroup) : line;
+
+                return new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
+            } catch (Exception e) {
+                // If parsing fails for a line that matches the regex, treat it as multiline if
+                // possible
+                if (lastEntry != null) {
+                    return lastEntry.appendMessage("\n" + line);
+                }
+                // If we match but can't parse date and have no parent, we still return a
+                // "partial" entry?
+                // For now, return null to fallback or skip if it's the very first line and
+                // broken.
+                return null;
+            }
+        } else if (lastEntry != null) {
+            return lastEntry.appendMessage("\n" + line);
+        }
+        return null;
     }
 
     @Override
