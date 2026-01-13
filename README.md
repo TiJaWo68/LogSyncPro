@@ -29,6 +29,19 @@ Log formats are not hard-coded. Add new timestamp formats and Regex parsers "on 
 *   **Dynamic Split-Panes**: Each log lives in its own closable view.
 *   **Real-time Filtering**: Fast search and Regex filtering per table.
 
+## 🚀 Command Line Interface
+
+LogSyncPro supports various startup parameters to automate your workflow:
+
+*   **`--open=path1,path2`**: Opens the specified files or directories immediately on startup.
+*   **`--ssh=[user[:password]@]host`**: Initiates a K8s log discovery via SSH.
+    *   If password or host is missing, the connection dialog will appear pre-filled.
+    *   Example: `--ssh=admin:secret@192.168.1.10`
+*   **`--fetch="pattern1,pattern2"`**: Automatically selects and streams containers matching the patterns.
+    *   Used in combination with `--ssh`.
+    *   Supports wildcards (e.g., `*/web*/*`) or substring matching.
+    *   Example: `--fetch="production/frontend-*,backend"`
+
 ## 🛠 Tech Stack
 *   **Engine**: Java 21 (LTS)
 *   **UI**: Swing with FlatLaf & MigLayout
