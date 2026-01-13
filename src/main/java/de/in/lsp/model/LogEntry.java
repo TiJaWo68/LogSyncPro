@@ -15,6 +15,7 @@ public record LogEntry(
         String level,
         String thread,
         String loggerName,
+        String ip,
         String message,
         String sourceFile,
         String rawLine) implements Comparable<LogEntry> {
@@ -55,7 +56,7 @@ public record LogEntry(
     }
 
     public LogEntry appendMessage(String extra) {
-        return new LogEntry(timestamp, level, thread, loggerName, message + extra, sourceFile, rawLine + extra);
+        return new LogEntry(timestamp, level, thread, loggerName, ip, message + extra, sourceFile, rawLine + extra);
     }
 
     @Override
