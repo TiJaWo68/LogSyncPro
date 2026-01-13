@@ -5,6 +5,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * A side/bottom panel that displays the full details of a single selected
+ * LogEntry.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
+ */
 public class LogDetailView extends JPanel {
 
     private final JTextArea messageArea;
