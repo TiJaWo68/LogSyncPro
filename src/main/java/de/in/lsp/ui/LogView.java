@@ -19,6 +19,8 @@ import java.util.function.BiConsumer;
 /**
  * A self-contained UI component that displays log entries in a table with
  * filtering capabilities.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class LogView extends JPanel {
 
