@@ -35,6 +35,19 @@ Dynamic Split-Panes: Jedes Log in einer eigenen, schließbaren Ansicht.
 
 Echtzeit-Filter: Blitzschnelle Suche und Regex-Filterung pro Tabelle.
 
+## 🚀 Kommandozeile
+
+LogSyncPro unterstützt Startparameter zur Automatisierung:
+
+*   **`--open=pfad1,pfad2`**: Öffnet die angegebenen Dateien oder Verzeichnisse beim Start.
+*   **`--ssh=[user[:password]@]host`**: Startet die K8s-Log-Discovery via SSH.
+    *   Fehlende Angaben (z. B. Passwort) werden über den Dialog abgefragt.
+    *   Beispiel: `--ssh=node-admin:geheim@my-cluster-node`
+*   **`--fetch="muster1,muster2"`**: Automatisiert die Container-Auswahl.
+    *   Funktioniert in Kombination mit `--ssh`.
+    *   Unterstützt Wildcards (`*`) und Teilstring-Suche.
+    *   Beispiel: `--fetch="default/gateway*,auth-service"`
+
 ## 🛠 Tech-Stack
 Engine: Java 21 (LTS)
 
@@ -47,7 +60,7 @@ Architektur: Strategy-Pattern für erweiterbare Parser-Logik
 ❓ Deine Meinung ist gefragt!
 LogSyncPro soll das Schweizer Taschenmesser für Entwickler werden. Welche Features fehlen dir für deinen Workflow?
 
-Remote-Logs: Direkte Anbindung an SSH/SFTP oder Kubernetes-Pods?
+✅ Remote-Logs: Direkte Anbindung an SSH/SFTP und Kubernetes-Pods (siehe Startparameter).
 
 Highlighting: Markierung von bestimmten Schlüsselwörtern (z.B. Error-IDs) über alle Logs hinweg?
 
