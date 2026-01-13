@@ -47,7 +47,7 @@ public class ZebraTableRenderer extends DefaultTableCellRenderer {
         }
 
         // Source column special rendering
-        if (modelColumn == 5) { // Source
+        if (modelColumn == 6) { // Source
             String source = String.valueOf(value);
             label.setText("");
             label.setToolTipText(source);
@@ -61,6 +61,11 @@ public class ZebraTableRenderer extends DefaultTableCellRenderer {
             label.setHorizontalAlignment(SwingConstants.CENTER);
         } else {
             label.setHorizontalAlignment(SwingConstants.LEADING);
+        }
+
+        // Hide "UNKNOWN" placeholder values
+        if ("UNKNOWN".equals(String.valueOf(value))) {
+            label.setText("");
         }
 
         return c;
