@@ -25,7 +25,7 @@ class LogParserTest {
                                 "^\\[.*\\] .*",
                                 "^\\[(.*?)\\]\\s+(\\w+)\\s+(.*)$",
                                 "yyyy-MM-dd HH:mm:ss",
-                                1, 2, -1, -1, 3);
+                                1, 2, -1, -1, -1, 3);
                 ConfigurableLogParser parser = new ConfigurableLogParser(config);
 
                 String logContent = "[2023-10-27 10:00:00] INFO This is a test message\n" +
