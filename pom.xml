@@ -6,7 +6,7 @@
 
     <groupId>de.in.lsp</groupId>
     <artifactId>LogSyncPro</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -63,6 +63,22 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+            <version>2.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-common</artifactId>
+            <version>2.12.0</version>
+        </dependency>
+        <!-- Cuberact Swing Layout for flexible and stable UI arrangement -->
+        <dependency>
+            <groupId>org.cuberact</groupId>
+            <artifactId>cuberact-swing-layout</artifactId>
+            <version>1.1.1</version>
         </dependency>
     </dependencies>
 
@@ -140,12 +156,12 @@
                                 <minVersion>21</minVersion>
                             </jre>
                             <versionInfo>
-                                <fileVersion>0.1.0.0</fileVersion>
-                                <txtFileVersion>0.1.0.0</txtFileVersion>
+                                <fileVersion>0.2.0.0</fileVersion>
+                                <txtFileVersion>0.2.0.0</txtFileVersion>
                                 <fileDescription>LogSyncPro - Advanced Log Viewer</fileDescription>
                                 <copyright>TiJaWo68 @ 2026</copyright>
-                                <productVersion>0.1.0.0</productVersion>
-                                <txtProductVersion>0.1.0.0</txtProductVersion>
+                                <productVersion>0.2.0.0</productVersion>
+                                <txtProductVersion>0.2.0.0</txtProductVersion>
                                 <productName>LogSyncPro</productName>
                                 <internalName>LogSyncPro</internalName>
                                 <originalFilename>LogSyncPro.exe</originalFilename>
