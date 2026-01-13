@@ -19,7 +19,7 @@ class MirthLogParserTest {
                                 "^[A-Z]+\\s+\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s+\\[.*$",
                                 "^([A-Z]+)\\s+(\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+\\[(.*?)\\]\\s+(.*?):\\s+(.*)$",
                                 "yyyy-MM-dd HH:mm:ss.SSS",
-                                2, 1, 3, 4, 5);
+                                2, 1, 3, 4, -1, 5);
                 ConfigurableLogParser parser = new ConfigurableLogParser(config);
 
                 String logContent = "INFO  2023-01-19 09:38:21.291 [Shutdown Hook Thread] com.mirth.connect.server.Mirth: shutting down mirth\n"
