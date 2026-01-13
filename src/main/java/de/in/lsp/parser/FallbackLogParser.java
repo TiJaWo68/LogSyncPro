@@ -11,6 +11,8 @@ import java.util.List;
 /**
  * A fallback parser that captures every line as a raw message.
  * Used when no other parser can handle the file format.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class FallbackLogParser implements LogParser {
 
