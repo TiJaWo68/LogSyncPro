@@ -4,6 +4,7 @@ import de.in.lsp.model.LogEntry;
 import de.in.lsp.parser.ConfigurableLogParser;
 import de.in.lsp.parser.LogFormatConfig;
 import de.in.lsp.parser.LogParser;
+import de.in.lsp.parser.MultiPatternLogParser;
 import de.in.lsp.parser.PatternBasedLogParser;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
@@ -12,6 +13,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,6 +28,9 @@ public class LogManager {
     private final List<LogParser> parsers = new ArrayList<>();
 
     public LogManager() {
+        // Quarkus (High priority, specific)
+        parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level [%logger] (%t) %msg%n"));
+
         // Default Parser: %d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
         parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"));
 
@@ -50,11 +55,11 @@ public class LogManager {
         // postman-portable.log
         parsers.add(new PatternBasedLogParser("%d{EEE, dd MMM yyyy HH:mm:ss z} %level %logger > %msg%n"));
 
-        // server.log
-        parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
-
         // mirth.log (as PatternBased)
         parsers.add(new PatternBasedLogParser("%level %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %logger: %msg%n"));
+
+        // server.log (Broad pattern, moved lower)
+        parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
 
         // server.log.dicomservices
         parsers.add(new ConfigurableLogParser(new LogFormatConfig(
@@ -62,7 +67,15 @@ public class LogManager {
                 "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\\s+.*",
                 "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)\\s+(\\w+)\\s+\\d+\\s+---\\s+\\[.*?\\]\\s+\\[(.*?)\\]\\s+\\[.*?\\]\\s+(.*?)\\s+:\\s+(.*)$",
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                1, 2, 3, 4, 5)));
+                1, 2, 3, 4, -1, 5)));
+
+        // Postgres / Patroni
+        parsers.add(new MultiPatternLogParser("Postgres (mixed)", Arrays.asList(
+                "%d{yyyy-MM-dd HH:mm:ss,SSS} %level: %msg%n",
+                "%d{yyyy-MM-dd HH:mm:ss.SSS} UTC [%t] %level %msg%n")));
+
+        // Access Log (Nginx/Apache)
+        parsers.add(new PatternBasedLogParser("%h - - [%d{dd/MMM/yyyy:HH:mm:ss Z}] %msg%n"));
 
         // Legacy-Default as fallback
         parsers.add(new ConfigurableLogParser(new LogFormatConfig(
@@ -70,7 +83,7 @@ public class LogManager {
                 "^\\[.*\\] .*",
                 "^\\[(.*?)\\]\\s+(\\w+)\\s+(.*)$",
                 "yyyy-MM-dd HH:mm:ss",
-                1, 2, -1, -1, 3)));
+                1, 2, -1, -1, -1, 3)));
     }
 
     public void addParser(LogParser parser) {
@@ -245,6 +258,10 @@ public class LogManager {
                 || n.endsWith(".gz") || n.endsWith(".tar") || n.endsWith(".iso");
     }
 
+    public List<LogEntry> parseStream(InputStream is, String sourceName) throws Exception {
+        return parseWithAutoDetect(is, sourceName);
+    }
+
     private List<LogEntry> parseWithAutoDetect(InputStream is, String sourceName) throws Exception {
         // Read the first 16KB to detect the parser
         int bufferSize = 16 * 1024;
@@ -289,12 +306,15 @@ public class LogManager {
         }
 
         LogParser selectedParser = null;
-        if (candidates.isEmpty()) {
-            // Will fallback
-        } else {
-            // Try to find the best parser among candidates (even if just 1, we verify it
-            // produces data)
+        if (!candidates.isEmpty()) {
+            // Try to find the best parser among candidates
             selectedParser = findBestParser(candidates, head, sourceName);
+        }
+
+        if (selectedParser == null) {
+            // No candidate matched first line OR candidates produced no entries.
+            // Try ALL parsers (handles cases where the file starts with a header).
+            selectedParser = findBestParser(parsers, head, sourceName);
         }
 
         if (selectedParser == null) {
@@ -338,14 +358,26 @@ public class LogManager {
 
     private LogParser findBestParser(List<LogParser> candidates, byte[] head, String sourceName) {
         LogParser bestParser = null;
-        int maxEntries = 0; // Require at least 1 entry
+        int maxTimedEntries = 0;
+        int maxTotalEntries = 0;
 
         for (LogParser parser : candidates) {
             try {
                 // Parse the header chunk to count entries
                 List<LogEntry> entries = parser.parse(new ByteArrayInputStream(head), sourceName);
-                if (entries.size() > maxEntries) {
-                    maxEntries = entries.size();
+                int timedEntries = 0;
+                for (LogEntry e : entries) {
+                    if (e.timestamp() != null) {
+                        timedEntries++;
+                    }
+                }
+
+                // We prefer the parser that finds the most TIMED entries.
+                // If timedEntries are equal, we take the one with more total entries.
+                if (timedEntries > maxTimedEntries
+                        || (timedEntries == maxTimedEntries && entries.size() > maxTotalEntries)) {
+                    maxTimedEntries = timedEntries;
+                    maxTotalEntries = entries.size();
                     bestParser = parser;
                 }
             } catch (Exception e) {
@@ -353,7 +385,9 @@ public class LogManager {
             }
         }
 
-        return bestParser; // Returns null if no parser produced > 0 entries
+        // Return best parser if it found at least some entries (even if just headers,
+        // but timed preferred)
+        return (maxTotalEntries > 0) ? bestParser : null;
     }
 
     /**
