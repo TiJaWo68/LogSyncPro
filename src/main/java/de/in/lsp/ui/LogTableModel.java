@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class LogTableModel extends AbstractTableModel {
     private final List<LogEntry> entries;
-    private final String[] columns = { "Timestamp", "Level", "Thread", "Logger", "Message", "Source" };
+    private final String[] columns = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
 
     public LogTableModel(List<LogEntry> entries) {
         this.entries = entries;
@@ -41,8 +41,9 @@ public class LogTableModel extends AbstractTableModel {
             case 1 -> entry.level();
             case 2 -> entry.getSimpleThreadName();
             case 3 -> entry.getSimpleLoggerName();
-            case 4 -> entry.message();
-            case 5 -> entry.sourceFile();
+            case 4 -> entry.ip();
+            case 5 -> entry.message();
+            case 6 -> entry.sourceFile();
             default -> null;
         };
     }
