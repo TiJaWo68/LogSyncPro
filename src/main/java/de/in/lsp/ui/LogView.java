@@ -253,6 +253,12 @@ public class LogView extends JPanel {
                 && !"UNKNOWN".equalsIgnoreCase(e.loggerName()));
         if (!hasLogger)
             permanentlyHiddenColumns.add(3);
+
+        // 4: IP
+        boolean hasIp = entries.stream().anyMatch(e -> e.ip() != null && !e.ip().isEmpty()
+                && !"UNKNOWN".equalsIgnoreCase(e.ip()));
+        if (!hasIp)
+            permanentlyHiddenColumns.add(4);
     }
 
     private void setupTableColumns() {
@@ -260,7 +266,7 @@ public class LogView extends JPanel {
         FontMetrics fm = table.getFontMetrics(table.getFont());
 
         // Helper to remove if hidden, else set width
-        for (int i : new int[] { 0, 1, 2, 3 }) {
+        for (int i : new int[] { 0, 1, 2, 3, 4 }) {
             TableColumn col = getColumnByModelIndex(tcm, i);
             if (col != null) {
                 if (permanentlyHiddenColumns.contains(i)) {
@@ -272,16 +278,16 @@ public class LogView extends JPanel {
             }
         }
 
-        // 4: Message - Resizable (No max width)
-        TableColumn colMsg = getColumnByModelIndex(tcm, 4);
+        // 5: Message - Resizable (No max width)
+        TableColumn colMsg = getColumnByModelIndex(tcm, 5);
         if (colMsg != null) {
             colMsg.setPreferredWidth(400);
             colMsg.setMinWidth(100);
             colMsg.setMaxWidth(Integer.MAX_VALUE);
         }
 
-        // 5: Source - Fixed narrow, hide header
-        TableColumn colSource = getColumnByModelIndex(tcm, 5);
+        // 6: Source - Fixed narrow, hide header
+        TableColumn colSource = getColumnByModelIndex(tcm, 6);
         if (colSource != null) {
             setColumnWidth(colSource, 24);
             colSource.setHeaderValue(""); // No header text
@@ -388,7 +394,7 @@ public class LogView extends JPanel {
                             if (onSelectionChanged != null) {
                                 onSelectionChanged.accept(LogView.this, selected.timestamp());
                             }
-                        } else if (modelColumn == 4) { // Message column
+                        } else if (modelColumn == 5) { // Message column
                             LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
                             toggleDetailView(true);
                             detailView.setEntry(selected);
@@ -411,7 +417,8 @@ public class LogView extends JPanel {
 
     public void scrollToTimestamp(LocalDateTime timestamp) {
         // Binary Search for nearest timestamp
-        int index = Collections.binarySearch(entries, new LogEntry(timestamp, null, null, null, null, null, null));
+        int index = Collections.binarySearch(entries,
+                new LogEntry(timestamp, null, null, null, null, null, null, null));
         if (index < 0) {
             index = -(index + 1);
         }
