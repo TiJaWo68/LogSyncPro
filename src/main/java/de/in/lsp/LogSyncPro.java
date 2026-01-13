@@ -75,6 +75,10 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         openItem.addActionListener(e -> openLogs());
         fileMenu.add(openItem);
 
+        JMenuItem importK8sItem = new JMenuItem("Import from K8s via SSH...");
+        importK8sItem.addActionListener(e -> appActions.importFromK8s(this, columnVisibility));
+        fileMenu.add(importK8sItem);
+
         mergeItem = new JMenuItem("Merge Selected Views");
         mergeItem.addActionListener(e -> appActions.mergeLogs(this, columnVisibility));
         mergeItem.setEnabled(false);
@@ -260,6 +264,9 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
     private void handleArguments(String[] args) {
         List<File> filesToOpen = new ArrayList<>();
+        String sshValue = null;
+        String fetchValue = null;
+
         for (String arg : args) {
             if (arg.startsWith("--open=")) {
                 String pathsStr = arg.substring("--open=".length());
@@ -267,8 +274,17 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
                 for (String p : paths) {
                     filesToOpen.add(new File(p));
                 }
+            } else if (arg.startsWith("--ssh=")) {
+                sshValue = arg.substring("--ssh=".length());
+            } else if (arg.startsWith("--fetch=")) {
+                fetchValue = arg.substring("--fetch=".length());
             }
         }
+
+        if (sshValue != null) {
+            appActions.importFromK8sAutomated(sshValue, fetchValue, this, columnVisibility);
+        }
+
         if (!filesToOpen.isEmpty()) {
             backgroundLoadFiles(filesToOpen);
         }
