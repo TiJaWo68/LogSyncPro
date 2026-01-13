@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * A modal dialog for searching text within one or all open log views.
+ * Supports backward search, whole word matching, and column-specific filtering.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
+ */
 public class SearchDialog extends JDialog {
 
     private final List<LogView> allViews;
