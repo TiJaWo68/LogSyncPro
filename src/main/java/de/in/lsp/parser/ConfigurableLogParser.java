@@ -52,8 +52,9 @@ public class ConfigurableLogParser implements LogParser {
                         String level = matcher.group(config.levelGroup());
                         String thread = (config.threadGroup() != -1) ? matcher.group(config.threadGroup()) : "UNKNOWN";
                         String logger = (config.loggerGroup() != -1) ? matcher.group(config.loggerGroup()) : "UNKNOWN";
+                        String ip = (config.ipGroup() != -1) ? matcher.group(config.ipGroup()) : "UNKNOWN";
                         String message = matcher.group(config.messageGroup());
-                        lastEntry = new LogEntry(ts, level, thread, logger, message, sourceName, line);
+                        lastEntry = new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
                         entries.add(lastEntry);
                     } catch (Exception e) {
                         // If parsing fails but it matched the regex, treat it as part of the previous
