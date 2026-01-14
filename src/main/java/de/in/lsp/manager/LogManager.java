@@ -61,13 +61,13 @@ public class LogManager {
         // server.log (Broad pattern, moved lower)
         parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
 
-        // server.log.dicomservices
+        // server.log.dicomservices (Spring Boot default-ish with ISO8601)
         parsers.add(new ConfigurableLogParser(new LogFormatConfig(
                 "server.log.dicomservices",
-                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\\s+.*",
-                "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)\\s+(\\w+)\\s+\\d+\\s+---\\s+\\[.*?\\]\\s+\\[(.*?)\\]\\s+\\[.*?\\]\\s+(.*?)\\s+:\\s+(.*)$",
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z?\\s+.*",
+                "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z?)\\s+(\\w+)\\s+\\d+\\s+---\\s+\\[(.*?)\\]\\s*(?:\\[(.*?)\\]\\s*)?(.*?)\\s+:\\s+(.*)$",
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                1, 2, 3, 4, -1, 5)));
+                1, 2, 3, 5, -1, 6)));
 
         // Postgres / Patroni
         parsers.add(new MultiPatternLogParser("Postgres (mixed)", Arrays.asList(
@@ -385,9 +385,10 @@ public class LogManager {
             }
         }
 
-        // Return best parser if it found at least some entries (even if just headers,
-        // but timed preferred)
-        return (maxTotalEntries > 0) ? bestParser : null;
+        // Return best parser if it found at least some TIMED entries.
+        // If no parser found timed entries, we prefer null to trigger
+        // FallbackLogParser.
+        return (maxTimedEntries > 0) ? bestParser : null;
     }
 
     /**
