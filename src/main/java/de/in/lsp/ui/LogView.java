@@ -202,6 +202,15 @@ public class LogView extends JPanel {
                 changeFontSize(-1);
             }
         });
+
+        // Escape to close detail view
+        inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0), "closeDetail");
+        actionMap.put("closeDetail", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                toggleDetailView(false);
+            }
+        });
     }
 
     private void changeFontSize(int delta) {
