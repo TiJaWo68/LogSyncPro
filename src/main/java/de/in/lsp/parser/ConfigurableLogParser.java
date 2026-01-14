@@ -44,6 +44,7 @@ public class ConfigurableLogParser implements LogParser {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             LogEntry lastEntry = null;
+            List<String> headerBuffer = new ArrayList<>();
             while ((line = reader.readLine()) != null) {
                 Matcher matcher = pattern.matcher(line);
                 if (matcher.find()) {
@@ -54,6 +55,15 @@ public class ConfigurableLogParser implements LogParser {
                         String logger = (config.loggerGroup() != -1) ? matcher.group(config.loggerGroup()) : "UNKNOWN";
                         String ip = (config.ipGroup() != -1) ? matcher.group(config.ipGroup()) : "UNKNOWN";
                         String message = matcher.group(config.messageGroup());
+
+                        // Flush header buffer if first match
+                        if (lastEntry == null && !headerBuffer.isEmpty()) {
+                            String combinedHeader = String.join("\n", headerBuffer);
+                            entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader,
+                                    sourceName, combinedHeader));
+                            headerBuffer.clear();
+                        }
+
                         lastEntry = new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
                         entries.add(lastEntry);
                     } catch (Exception e) {
@@ -62,13 +72,24 @@ public class ConfigurableLogParser implements LogParser {
                         if (lastEntry != null) {
                             lastEntry = lastEntry.appendMessage("\n" + line);
                             entries.set(entries.size() - 1, lastEntry);
+                        } else {
+                            headerBuffer.add(line);
                         }
                     }
                 } else if (lastEntry != null) {
                     // Multi-line support: append to the previous entry
                     lastEntry = lastEntry.appendMessage("\n" + line);
                     entries.set(entries.size() - 1, lastEntry);
+                } else {
+                    // Initial header
+                    headerBuffer.add(line);
                 }
+            }
+            // If we NEVER found a match, but have headers, add them as one entry
+            if (lastEntry == null && !headerBuffer.isEmpty()) {
+                String combinedHeader = String.join("\n", headerBuffer);
+                entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader, sourceName,
+                        combinedHeader));
             }
         }
         return entries;
