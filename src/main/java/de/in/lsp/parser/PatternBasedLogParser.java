@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.LocalDate;
 
 /**
  * A LogParser that can be configured using a pattern string similar to
@@ -114,23 +115,36 @@ public class PatternBasedLogParser implements LogParser {
                     i += 5;
                 } else {
                     if (next == ' ') {
-                        regexBuilder.append("\\s+");
+                        // Consolidate multiple spaces in pattern to a single \s+
+                        if (regexBuilder.length() >= 3
+                                && regexBuilder.substring(regexBuilder.length() - 3).equals("\\s+")) {
+                            // already have a space
+                        } else {
+                            regexBuilder.append("\\s+");
+                        }
                     } else {
                         regexBuilder.append(Pattern.quote(String.valueOf(next)));
                     }
                 }
             } else {
                 if (c == ' ') {
-                    regexBuilder.append("\\s+");
+                    if (regexBuilder.length() >= 3
+                            && regexBuilder.substring(regexBuilder.length() - 3).equals("\\s+")) {
+                        // already have a space
+                    } else {
+                        regexBuilder.append("\\s+");
+                    }
                 } else {
                     regexBuilder.append(Pattern.quote(String.valueOf(c)));
                 }
             }
         }
 
-        String finalRegex = regexBuilder.toString().replace("%n", "");
+        String finalRegex = regexBuilder.toString();
         // System.out.println("Generated Regex: " + finalRegex);
+
         this.regexPattern = Pattern.compile("^" + finalRegex + "$");
+
         this.dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatBuilder.toString(), java.util.Locale.US);
     }
 
@@ -205,7 +219,22 @@ public class PatternBasedLogParser implements LogParser {
                 LocalDateTime ts = null;
                 if (timestampGroup != -1) {
                     String tsStr = matcher.group(timestampGroup).trim();
-                    ts = LocalDateTime.parse(tsStr, dateTimeFormatter);
+                    try {
+                        ts = LocalDateTime.parse(tsStr, dateTimeFormatter);
+                    } catch (Exception e) {
+                        // Fallback for time-only formats
+                        try {
+                            java.time.LocalTime time = java.time.LocalTime.parse(tsStr, dateTimeFormatter);
+                            ts = time.atDate(LocalDate.now());
+                        } catch (Exception e2) {
+                            // If both fail, we can't parse the timestamp.
+                            // If this is the start of a match, we might still want to return a
+                            // "date-less" entry?
+                            // For now, let it fail to parseLine(null) to be treated as header or
+                            // continuation.
+                            throw e;
+                        }
+                    }
                 }
 
                 String level = (levelGroup != -1) ? matcher.group(levelGroup).trim() : "UNKNOWN";
