@@ -1,5 +1,6 @@
 package de.in.lsp.service;
 
+import de.in.lsp.util.LspLogger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,19 +29,26 @@ public class SshK8sService implements AutoCloseable {
 
 	public void connect(String host, int port, String user, String password) throws IOException {
 		this.password = password;
+		LspLogger.info("Connecting to SSH host: " + user + "@" + host + ":" + port);
 		client = SshClient.setUpDefaultClient();
 		client.start();
 		session = client.connect(user, host, port).verify(TIMEOUT).getSession();
 		session.addPasswordIdentity(password);
 		session.auth().verify(TIMEOUT);
+		LspLogger.info("SSH connection established successfully.");
 	}
 
 	public List<K8sNamespace> discoverPods() throws IOException {
-		// Use sudo -S -i to ensure root environment is used, and feed password via stdin Using | as separator is more robust against
+		// Use sudo -S -i to ensure root environment is used, and feed password via
+		// stdin Using | as separator is more robust against
 		// whitespace mangling during "transport"
 		String command = "sudo -S -i kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{\"\\t\"}{.metadata.name}{\"\\t\"}{range .spec.containers[*]}{.name}{\" \"}{end}{\"\\n\"}{end}'";
+		LspLogger.info("Executing K8s pod discovery command.");
 		String output = executeCommand(command);
-		return parseK8sOutput(output);
+		List<K8sNamespace> namespaces = parseK8sOutput(output);
+		LspLogger.info("Discovered " + namespaces.stream().mapToInt(n -> n.getPods().size()).sum() + " pods in "
+				+ namespaces.size() + " namespaces.");
+		return namespaces;
 	}
 
 	private String executeCommand(String command) throws IOException {
@@ -70,6 +78,7 @@ public class SshK8sService implements AutoCloseable {
 
 	public InputStream streamLogs(String namespace, String pod, String container) throws IOException {
 		String command = String.format("sudo -S -i kubectl -n %s logs %s -c %s", namespace, pod, container);
+		LspLogger.info("Executing log streaming command for " + pod + "/" + container);
 		ClientChannel channel = session.createExecChannel(command);
 		channel.open().verify(TIMEOUT);
 
@@ -92,7 +101,8 @@ public class SshK8sService implements AutoCloseable {
 			if (line.isEmpty())
 				continue;
 
-			// Priority 1: Split by pipe (our new robust format) Priority 2: Split by tab Priority 3: Split by 2+ spaces (fallback for
+			// Priority 1: Split by pipe (our new robust format) Priority 2: Split by tab
+			// Priority 3: Split by 2+ spaces (fallback for
 			// manual command output)
 			String[] parts = line.split("\\|");
 			if (parts.length < 2) {
