@@ -1,5 +1,6 @@
 package de.in.lsp.ui;
 
+import de.in.lsp.util.LspLogger;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -139,6 +140,7 @@ public class SearchDialog extends JDialog {
         if (query.isEmpty())
             return;
 
+        LspLogger.info("Searching for '" + query + "' in " + (allViewsBox.isSelected() ? "all views" : "current view"));
         boolean backward = backwardBox.isSelected();
         boolean matchWholeWord = wholeWordBox.isSelected();
         List<Integer> selectedColumns = getSelectedColumns();
@@ -155,6 +157,7 @@ public class SearchDialog extends JDialog {
         if (query.isEmpty())
             return;
 
+        LspLogger.info("Counting occurrences of '" + query + "'");
         boolean matchWholeWord = wholeWordBox.isSelected();
         List<Integer> selectedColumns = getSelectedColumns();
         int total = 0;
@@ -183,6 +186,7 @@ public class SearchDialog extends JDialog {
             }
         }
 
+        LspLogger.info("Found " + total + " occurrences of '" + query + "'");
         JOptionPane.showMessageDialog(this, "Found " + total + " occurrences.");
     }
 
@@ -246,6 +250,7 @@ public class SearchDialog extends JDialog {
             for (int i = startRow; i >= 0; i--) {
                 int modelRow = table.convertRowIndexToModel(i);
                 if (matches(model, modelRow, query, matchWholeWord, selectedColumns)) {
+                    LspLogger.info("Found match in '" + view.getTitle() + "' at row " + i);
                     selectRow(table, i);
                     return true;
                 }
@@ -254,6 +259,7 @@ public class SearchDialog extends JDialog {
             for (int i = startRow; i < rowCount; i++) {
                 int modelRow = table.convertRowIndexToModel(i);
                 if (matches(model, modelRow, query, matchWholeWord, selectedColumns)) {
+                    LspLogger.info("Found match in '" + view.getTitle() + "' at row " + i);
                     selectRow(table, i);
                     return true;
                 }
