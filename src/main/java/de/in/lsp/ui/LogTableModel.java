@@ -56,6 +56,11 @@ public class LogTableModel extends AbstractTableModel {
         return entries;
     }
 
+    public void addEntry(LogEntry entry) {
+        int row = entries.size() - 1;
+        fireTableRowsInserted(row, row);
+    }
+
     public int getUniqueSourceCount() {
         return (int) entries.stream()
                 .map(LogEntry::sourceFile)
