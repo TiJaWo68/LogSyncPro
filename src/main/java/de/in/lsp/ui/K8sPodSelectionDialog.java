@@ -65,6 +65,11 @@ public class K8sPodSelectionDialog extends JDialog {
 
         setSize(600, 400);
         setLocationRelativeTo(parent);
+
+        // Escape key to close
+        getRootPane().registerKeyboardAction(e -> dispose(),
+                KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     private void collectSelected() {
