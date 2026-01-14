@@ -3,10 +3,13 @@ package de.in.lsp.ui;
 import de.in.lsp.model.LogEntry;
 import javax.swing.*;
 import java.awt.*;
+import java.net.SocketAddress;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -16,8 +19,10 @@ import java.util.function.Consumer;
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class ViewManager {
-    private final List<LogView> logViews = new ArrayList<>();
-    private final List<LogView> minimizedViews = new ArrayList<>();
+    private final List<LogView> logViews = new CopyOnWriteArrayList<>();
+    private final List<LogView> minimizedViews = new CopyOnWriteArrayList<>();
+    private final Map<String, List<LogEntry>> pendingBuffers = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, LogView> activeStreams = new ConcurrentHashMap<>();
     private final JPanel centerPanel;
     private final Consumer<LogView> focusCallback;
     private final Runnable layoutChangeCallback;
@@ -44,9 +49,22 @@ public class ViewManager {
         return focusedLogView;
     }
 
-    public void addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
+    public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
             LogView.LogViewListener listener) {
-        LogView logView = new LogView(entries, title, this::syncOtherViews, listener);
+        return addLogView(entries, title, columnVisibility, listener, null, null);
+    }
+
+    public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
+            LogView.LogViewListener listener, String appName, String clientIp) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> addLogView(entries, title, columnVisibility, listener, appName, clientIp));
+            return null; // Return null if not on EDT, but should be avoided for internal callers
+        }
+        LogView logView = new LogView(new ArrayList<>(entries), title, this::syncOtherViews, listener);
+        logView.setMetaData(appName, clientIp);
+        if (!entries.isEmpty() && entries.get(0).loggerName() != null) {
+            logView.setInitialLoggerName(entries.get(0).loggerName());
+        }
 
         columnVisibility.forEach((index, visible) -> {
             if (!visible) {
@@ -63,6 +81,7 @@ public class ViewManager {
 
         rebuildLayout();
         layoutChangeCallback.run();
+        return logView;
     }
 
     public void removeView(LogView view) {
@@ -158,6 +177,98 @@ public class ViewManager {
 
     public int getFontSize() {
         return fontSize;
+    }
+
+    public LogView findView(String appName, String clientIp) {
+        return findView(appName, clientIp, null);
+    }
+
+    public LogView findView(String appName, String clientIp, String loggerName) {
+        if (appName == null || clientIp == null)
+            return null;
+        return logViews.stream()
+                .filter(v -> {
+                    if (!appName.equals(v.getAppName()) || !clientIp.equals(v.getClientIp())) {
+                        return false;
+                    }
+                    if ("RemoteApp".equals(appName) && loggerName != null) {
+                        return loggerName.equals(v.getInitialLoggerName());
+                    }
+                    return true;
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+    public void addEntry(LogView view, LogEntry entry) {
+        SwingUtilities.invokeLater(() -> {
+            view.addEntry(entry);
+        });
+    }
+
+    public void handleStreamingEntry(LogEntry entry, SocketAddress remoteAddress, LogView.LogViewListener listener,
+            Map<Integer, Boolean> columnVisibility) {
+        if (entry == null) {
+            // Connection closed
+            activeStreams.remove(remoteAddress);
+            return;
+        }
+
+        LogView existingBySession = activeStreams.get(remoteAddress);
+        if (existingBySession != null) {
+            addEntry(existingBySession, entry);
+            return;
+        }
+
+        String appName = entry.sourceFile();
+        String clientIp = entry.ip();
+        String loggerName = entry.loggerName();
+
+        // Use the robust findView with loggerName heuristic
+        LogView existing = findView(appName, clientIp, loggerName);
+
+        if (existing != null) {
+            activeStreams.put(remoteAddress, existing);
+            addEntry(existing, entry);
+            return;
+        }
+
+        String key = appName + "|" + clientIp + "|" + loggerName;
+        boolean[] isNew = { false };
+        pendingBuffers.compute(key, (k, buffer) -> {
+            if (buffer == null) {
+                buffer = new CopyOnWriteArrayList<>();
+                buffer.add(entry);
+                isNew[0] = true;
+                return buffer;
+            } else {
+                buffer.add(entry);
+                return buffer;
+            }
+        });
+
+        if (isNew[0]) {
+            SwingUtilities.invokeLater(() -> {
+                List<LogEntry> initialEntries = pendingBuffers.get(key);
+                String title = appName;
+                if (!"RemoteApp".equals(appName)) {
+                    title += " (" + clientIp + ")";
+                } else {
+                    title = "Remote: " + entry.getSimpleLoggerName();
+                }
+                addLogView(initialEntries, title, columnVisibility, listener, appName, clientIp);
+                pendingBuffers.remove(key);
+
+                // Add to active streams after view is created (but we need the view instance)
+                // Since addLogView is async, we'll find it again using the more specific lookup
+                SwingUtilities.invokeLater(() -> {
+                    LogView created = findView(appName, clientIp, loggerName);
+                    if (created != null) {
+                        activeStreams.put(remoteAddress, created);
+                    }
+                });
+            });
+        }
     }
 
     public JComponent getCurrentRootComponent() {
