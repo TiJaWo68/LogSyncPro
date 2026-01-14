@@ -58,6 +58,11 @@ public class LogManager {
         // mirth.log (as PatternBased)
         parsers.add(new PatternBasedLogParser("%level %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %logger: %msg%n"));
 
+        // diagnost-services (reported issue)
+        // 09:00:40.743 [restartedMain] INFO com.pacs.client.ClientServices - ...
+        // \tSourceFile
+        parsers.add(new PatternBasedLogParser("%d{HH:mm:ss.SSS} [%t] %level  %logger - %msg%n"));
+
         // server.log (Broad pattern, moved lower)
         parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
 
@@ -263,8 +268,9 @@ public class LogManager {
     }
 
     private List<LogEntry> parseWithAutoDetect(InputStream is, String sourceName) throws Exception {
-        // Read the first 16KB to detect the parser
-        int bufferSize = 16 * 1024;
+        // Read the first 128KB to detect the parser (increased from 16KB for large
+        // headers)
+        int bufferSize = 128 * 1024;
         byte[] buffer = new byte[bufferSize];
         int bytesRead = 0;
         int n;
