@@ -3,6 +3,7 @@ package de.in.lsp.service;
 import de.in.lsp.dto.LogGroup;
 import de.in.lsp.manager.LogManager;
 import de.in.lsp.model.LogEntry;
+import de.in.lsp.util.LspLogger;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ public class LogFileService {
                 group.addSourceFile(sourceName);
             }
         } catch (Exception e) {
-            System.err.println("Error loading " + file.getName() + ": " + e.getMessage());
+            LspLogger.error("Error loading " + file.getName(), e);
         }
     }
 
