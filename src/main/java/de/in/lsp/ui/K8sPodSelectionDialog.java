@@ -1,6 +1,7 @@
 package de.in.lsp.ui;
 
 import de.in.lsp.service.SshK8sService;
+import de.in.lsp.util.LspLogger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -53,6 +54,8 @@ public class K8sPodSelectionDialog extends JDialog {
         JButton okButton = new JButton("Import Selected");
         okButton.addActionListener(e -> {
             collectSelected();
+            LspLogger.info(
+                    "User confirmed selection of " + selectedContainers.size() + " containers from selection dialog.");
             confirmed = true;
             dispose();
         });
