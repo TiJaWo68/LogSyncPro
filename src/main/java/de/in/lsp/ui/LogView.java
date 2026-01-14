@@ -49,6 +49,9 @@ public class LogView extends JPanel {
     private JScrollPane tableScrollPane;
     private boolean maximized = false;
     private boolean focused = false;
+    private String appName;
+    private String clientIp;
+    private String initialLoggerName;
 
     public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
             LogViewListener listener) {
@@ -168,41 +171,6 @@ public class LogView extends JPanel {
         InputMap inputMap = table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         ActionMap actionMap = table.getActionMap();
 
-        // Increase Font Size (Ctrl + Plus and Ctrl + Equals)
-        KeyStroke ctrlPlus = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_PLUS,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK);
-        KeyStroke ctrlEquals = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_EQUALS,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK); // For keyboards where + is shift+=
-        KeyStroke ctrlAdd = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ADD,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK); // Numpad +
-
-        inputMap.put(ctrlPlus, "increaseFont");
-        inputMap.put(ctrlEquals, "increaseFont");
-        inputMap.put(ctrlAdd, "increaseFont");
-
-        actionMap.put("increaseFont", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                changeFontSize(1);
-            }
-        });
-
-        // Decrease Font Size (Ctrl + Minus)
-        KeyStroke ctrlMinus = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_MINUS,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK);
-        KeyStroke ctrlSubtract = KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_SUBTRACT,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK); // Numpad -
-
-        inputMap.put(ctrlMinus, "decreaseFont");
-        inputMap.put(ctrlSubtract, "decreaseFont");
-
-        actionMap.put("decreaseFont", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                changeFontSize(-1);
-            }
-        });
-
         // Escape to close detail view
         inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0), "closeDetail");
         actionMap.put("closeDetail", new AbstractAction() {
@@ -211,14 +179,6 @@ public class LogView extends JPanel {
                 toggleDetailView(false);
             }
         });
-    }
-
-    private void changeFontSize(int delta) {
-        Font font = table.getFont();
-        int newSize = font.getSize() + delta;
-        if (newSize >= 8 && newSize <= 40) {
-            updateFontSize(newSize);
-        }
     }
 
     private void createDetailView() {
@@ -241,6 +201,9 @@ public class LogView extends JPanel {
     private final Set<Integer> permanentlyHiddenColumns = new HashSet<>();
 
     private void analyzeColumns() {
+        if (entries.isEmpty())
+            return;
+
         // 0: Timestamp
         if (!hasTimestamps())
             permanentlyHiddenColumns.add(0);
@@ -511,5 +474,54 @@ public class LogView extends JPanel {
 
     public boolean hasTimestamps() {
         return entries.stream().anyMatch(e -> e.timestamp() != null);
+    }
+
+    public void setMetaData(String appName, String clientIp) {
+        this.appName = appName;
+        this.clientIp = clientIp;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setInitialLoggerName(String initialLoggerName) {
+        this.initialLoggerName = initialLoggerName;
+    }
+
+    public String getInitialLoggerName() {
+        return initialLoggerName;
+    }
+
+    public void addEntry(LogEntry entry) {
+        entries.add(entry);
+        model.addEntry(entry);
+        // If sorting is active, the sorter will handle it.
+        // But we might want to auto-scroll if we were at the bottom.
+        boolean atBottom = isAtBottom();
+        if (atBottom) {
+            SwingUtilities.invokeLater(this::scrollToBottom);
+        }
+    }
+
+    public void hideColumnPermanently(int modelIndex) {
+        permanentlyHiddenColumns.add(modelIndex);
+        SwingUtilities.invokeLater(() -> {
+            setupTableColumns();
+        });
+    }
+
+    private boolean isAtBottom() {
+        JScrollBar sb = tableScrollPane.getVerticalScrollBar();
+        return sb.getValue() + sb.getVisibleAmount() >= sb.getMaximum() - 20;
+    }
+
+    private void scrollToBottom() {
+        JScrollBar sb = tableScrollPane.getVerticalScrollBar();
+        sb.setValue(sb.getMaximum());
     }
 }
