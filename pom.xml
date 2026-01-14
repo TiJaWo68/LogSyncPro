@@ -6,7 +6,7 @@
 
     <groupId>de.in.lsp</groupId>
     <artifactId>LogSyncPro</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -156,12 +156,12 @@
                                 <minVersion>21</minVersion>
                             </jre>
                             <versionInfo>
-                                <fileVersion>0.2.0.0</fileVersion>
-                                <txtFileVersion>0.2.0.0</txtFileVersion>
+                                <fileVersion>0.2.1.0</fileVersion>
+                                <txtFileVersion>0.2.1.0</txtFileVersion>
                                 <fileDescription>LogSyncPro - Advanced Log Viewer</fileDescription>
                                 <copyright>TiJaWo68 @ 2026</copyright>
-                                <productVersion>0.2.0.0</productVersion>
-                                <txtProductVersion>0.2.0.0</txtProductVersion>
+                                <productVersion>0.2.1.0</productVersion>
+                                <txtProductVersion>0.2.1.0</txtProductVersion>
                                 <productName>LogSyncPro</productName>
                                 <internalName>LogSyncPro</internalName>
                                 <originalFilename>LogSyncPro.exe</originalFilename>
