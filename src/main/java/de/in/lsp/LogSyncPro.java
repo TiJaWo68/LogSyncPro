@@ -11,6 +11,7 @@ import de.in.lsp.ui.MemoryStatusBar;
 import de.in.lsp.ui.ViewManager;
 import de.in.lsp.service.LogStreamServer;
 import de.in.lsp.util.LspLogger;
+import de.in.lsp.util.VersionUtil;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -49,7 +50,8 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
             "Source" };
 
     public LogSyncPro(String[] args) {
-        setTitle("LogSyncPro");
+        String version = VersionUtil.retrieveVersionFromPom("de.in.lsp", "LogSyncPro");
+        setTitle("LogSyncPro " + version);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1000, 700));
 
@@ -171,6 +173,11 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
         quickGuideItem.addActionListener(e -> helpActions.openQuickGuide());
         helpMenu.add(quickGuideItem);
+
+        JMenuItem aboutItem = new JMenuItem("Über LogSyncPro");
+        aboutItem.addActionListener(e -> helpActions.openAboutDialog());
+        helpMenu.add(aboutItem);
+
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
