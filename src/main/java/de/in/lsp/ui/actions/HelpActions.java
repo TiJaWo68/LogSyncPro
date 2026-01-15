@@ -45,4 +45,8 @@ public class HelpActions {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    public void openAboutDialog() {
+        new de.in.lsp.ui.dialog.AboutDialog(parentFrame).setVisible(true);
+    }
 }
