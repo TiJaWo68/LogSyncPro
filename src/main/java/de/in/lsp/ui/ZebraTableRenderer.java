@@ -46,13 +46,13 @@ public class ZebraTableRenderer extends DefaultTableCellRenderer {
             }
         }
 
-        // Source column special rendering
+        // Source column special rendering (Icon or empty)
         if (modelColumn == 6) { // Source
             String source = String.valueOf(value);
-            label.setText("");
+            label.setText(""); // Always clear text to prevent "letters"
             label.setToolTipText(source);
 
-            // Only show icon if more than one source is present
+            // Use icons for source to keep it narrow (24px)
             if (table.getModel() instanceof LogTableModel ltm && ltm.getUniqueSourceCount() > 1) {
                 label.setIcon(new ColorBlockIcon(getColorForSource(source)));
             } else {
