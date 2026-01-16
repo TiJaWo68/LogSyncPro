@@ -30,7 +30,7 @@ public class ViewActions {
     }
 
     public void mergeLogs(LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
-        List<LogView> selectedViews = viewManager.getLogViews().stream().filter(LogView::isSelected).toList();
+        List<LogView> selectedViews = viewManager.getLogViews().stream().filter(LogView::isViewSelected).toList();
         if (selectedViews.isEmpty()) {
             JOptionPane.showMessageDialog(parentFrame, "No log views selected.");
             return;
@@ -53,11 +53,11 @@ public class ViewActions {
         }
         Collections.sort(allEntries);
         LspLogger.info("Merged " + selectedViews.size() + " views into a new view.");
-        viewManager.addLogView(allEntries, "Merged View", columnVisibility, listener);
+        viewManager.addLogView(allEntries, "Merged View", columnVisibility, listener, LogView.ViewType.MERGED);
     }
 
     public void closeSelectedViews() {
-        List<LogView> toRemove = viewManager.getLogViews().stream().filter(LogView::isSelected).toList();
+        List<LogView> toRemove = viewManager.getLogViews().stream().filter(LogView::isViewSelected).toList();
         if (toRemove.isEmpty()) {
             JOptionPane.showMessageDialog(parentFrame, "No log views selected.");
             return;
