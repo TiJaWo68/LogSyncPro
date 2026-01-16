@@ -36,7 +36,8 @@ public class FileActions {
             final String finalTitle = title;
             LspLogger.info("Loaded application '" + appName + "' with " + group.getEntries().size() + " entries.");
             SwingUtilities.invokeLater(
-                    () -> viewManager.addLogView(group.getEntries(), finalTitle, columnVisibility, listener));
+                    () -> viewManager.addLogView(group.getEntries(), finalTitle, columnVisibility, listener,
+                            LogView.ViewType.FILE));
         });
     }
 }
