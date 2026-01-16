@@ -1,16 +1,5 @@
 package de.in.lsp.ui.actions;
 
-import de.in.lsp.util.LspLogger;
-import de.in.lsp.manager.LogManager;
-import de.in.lsp.model.LogEntry;
-import de.in.lsp.service.SshK8sService;
-import de.in.lsp.ui.K8sPodSelectionDialog;
-import de.in.lsp.ui.LogView;
-import de.in.lsp.ui.ViewManager;
-import org.cuberact.swing.layout.Cell;
-import org.cuberact.swing.layout.Composite;
-
-import javax.swing.*;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,6 +7,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
+
+import org.cuberact.swing.layout.Cell;
+import org.cuberact.swing.layout.Composite;
+
+import de.in.lsp.manager.LogManager;
+import de.in.lsp.model.LogEntry;
+import de.in.lsp.service.SshK8sService;
+import de.in.lsp.ui.K8sPodSelectionDialog;
+import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.ViewManager;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Handles remote-related actions like SSH connection and K8s discovery.

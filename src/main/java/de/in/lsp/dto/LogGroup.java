@@ -1,10 +1,11 @@
 package de.in.lsp.dto;
 
-import de.in.lsp.model.LogEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Data Transfer Object representing a group of log entries belonging to the

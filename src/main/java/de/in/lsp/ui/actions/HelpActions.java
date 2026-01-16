@@ -1,11 +1,13 @@
 package de.in.lsp.ui.actions;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  * Handles help-related actions like opening the quick guide.

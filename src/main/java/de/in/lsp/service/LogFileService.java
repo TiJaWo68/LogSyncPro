@@ -1,9 +1,5 @@
 package de.in.lsp.service;
 
-import de.in.lsp.dto.LogGroup;
-import de.in.lsp.manager.LogManager;
-import de.in.lsp.model.LogEntry;
-import de.in.lsp.util.LspLogger;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import de.in.lsp.dto.LogGroup;
+import de.in.lsp.manager.LogManager;
+import de.in.lsp.model.LogEntry;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Service responsible for loading log files and grouping them by application

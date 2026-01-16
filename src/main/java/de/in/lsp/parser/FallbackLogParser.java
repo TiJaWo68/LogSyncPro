@@ -1,12 +1,13 @@
 package de.in.lsp.parser;
 
-import de.in.lsp.model.LogEntry;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * A fallback parser that captures every line as a raw message.

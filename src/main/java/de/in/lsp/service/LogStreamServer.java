@@ -1,6 +1,5 @@
 package de.in.lsp.service;
 
-import de.in.lsp.model.LogEntry;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,6 +7,8 @@ import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Base class for log stream servers.

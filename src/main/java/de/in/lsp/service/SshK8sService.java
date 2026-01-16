@@ -1,6 +1,5 @@
 package de.in.lsp.service;
 
-import de.in.lsp.util.LspLogger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +13,8 @@ import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
+
+import de.in.lsp.util.LspLogger;
 
 /**
  * Service for SSH communication and Kubernetes log collection.

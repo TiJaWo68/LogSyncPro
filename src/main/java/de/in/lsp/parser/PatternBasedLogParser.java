@@ -1,17 +1,18 @@
 package de.in.lsp.parser;
 
-import de.in.lsp.model.LogEntry;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.LocalDate;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * A LogParser that can be configured using a pattern string similar to

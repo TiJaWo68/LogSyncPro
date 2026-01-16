@@ -1,17 +1,20 @@
 package de.in.lsp.ui.actions;
 
-import de.in.lsp.util.LspLogger;
-import de.in.lsp.model.LogEntry;
-import de.in.lsp.ui.LogView;
-import de.in.lsp.ui.SearchDialog;
-import de.in.lsp.ui.ViewManager;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Component;
+import java.awt.KeyboardFocusManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+import de.in.lsp.model.LogEntry;
+import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.SearchDialog;
+import de.in.lsp.ui.ViewManager;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Handles view-related actions like merging, closing, and searching logs.

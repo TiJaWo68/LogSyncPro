@@ -1,7 +1,5 @@
 package de.in.lsp.ui;
 
-import de.in.lsp.model.LogEntry;
-import javax.swing.*;
 import java.net.SocketAddress;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -10,6 +8,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.SwingUtilities;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Manages LogView instances, their synchronization, and layout within the main

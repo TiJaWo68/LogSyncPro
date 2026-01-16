@@ -1,11 +1,29 @@
 package de.in.lsp.ui;
 
-import de.in.lsp.util.LspLogger;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+
+import de.in.lsp.util.LspLogger;
 
 /**
  * A modal dialog for searching text within one or all open log views.

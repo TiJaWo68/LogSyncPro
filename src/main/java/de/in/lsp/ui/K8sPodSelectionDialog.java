@@ -1,12 +1,22 @@
 package de.in.lsp.ui;
 
-import de.in.lsp.service.SshK8sService;
-import de.in.lsp.util.LspLogger;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
+import javax.swing.table.DefaultTableModel;
+
+import de.in.lsp.service.SshK8sService;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Dialog for selecting Kubernetes pods and containers to stream logs from.

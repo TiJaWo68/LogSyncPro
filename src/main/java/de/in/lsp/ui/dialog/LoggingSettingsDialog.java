@@ -1,8 +1,21 @@
 package de.in.lsp.ui.dialog;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 import de.in.lsp.util.LspLogger;
-import javax.swing.*;
-import java.awt.*;
 
 /**
  * Dialog to configure internal logging settings.

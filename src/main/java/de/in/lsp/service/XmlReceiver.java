@@ -1,6 +1,5 @@
 package de.in.lsp.service;
 
-import de.in.lsp.model.LogEntry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,6 +11,8 @@ import java.time.ZoneId;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Receiver for XML-formatted log events (Log4j/Logback XMLLayout).

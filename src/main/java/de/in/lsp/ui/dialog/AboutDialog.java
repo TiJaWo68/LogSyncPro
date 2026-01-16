@@ -30,6 +30,8 @@ import javax.swing.UIManager;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 
+import de.in.lsp.ui.helper.LibraryLoader;
+import de.in.lsp.ui.helper.LibraryLoader.LibraryInfo;
 import de.in.lsp.util.VersionUtil;
 
 /**
@@ -83,7 +85,8 @@ public class AboutDialog extends JDialog {
 		}
 
 		// Close on Escape
-		getRootPane().registerKeyboardAction(e -> dispose(), javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+		getRootPane().registerKeyboardAction(e -> dispose(),
+				javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
 				JComponent.WHEN_IN_FOCUSED_WINDOW);
 	}
 
@@ -196,60 +199,26 @@ public class AboutDialog extends JDialog {
 	}
 
 	private void loadLibrariesFromXml(JPanel listPanel) {
-		try (java.io.InputStream is = getClass().getResourceAsStream("/licenses.xml")) {
-			if (is == null) {
-				listPanel.add(new JLabel("Keine Lizenzinformationen gefunden (licenses.xml fehlt)."));
-				return;
-			}
+		LibraryLoader loader = new LibraryLoader();
+		List<LibraryInfo> libs = loader.loadLibraries();
 
-			javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
-			javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
-			org.w3c.dom.Document doc = builder.parse(is);
-
-			org.w3c.dom.NodeList dependencies = doc.getElementsByTagName("dependency");
-
-			for (int i = 0; i < dependencies.getLength(); i++) {
-				org.w3c.dom.Element dep = (org.w3c.dom.Element) dependencies.item(i);
-				String artifactId = getTagValue("artifactId", dep);
-				String version = getTagValue("version", dep);
-
-				String name = artifactId; // Default to artifactId
-				String licenseName = "Unknown";
-				String url = "";
-
-				// Parsing licenses
-				org.w3c.dom.NodeList licenses = dep.getElementsByTagName("license");
-				if (licenses.getLength() > 0) {
-					org.w3c.dom.Element license = (org.w3c.dom.Element) licenses.item(0);
-					licenseName = getTagValue("name", license);
-					url = getTagValue("url", license);
-				}
-
-				addLib(listPanel, name, version, licenseName, url);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			listPanel.add(new JLabel("Fehler beim Laden der Lizenzinformationen."));
+		for (LibraryInfo lib : libs) {
+			addLib(listPanel, lib.name(), lib.version(), lib.license(), lib.url());
 		}
-	}
 
-	private String getTagValue(String tag, org.w3c.dom.Element element) {
-		org.w3c.dom.NodeList nodeList = element.getElementsByTagName(tag);
-		if (nodeList != null && nodeList.getLength() > 0) {
-			org.w3c.dom.Node node = nodeList.item(0).getFirstChild();
-			if (node != null) {
-				return node.getNodeValue();
-			}
+		if (libs.isEmpty()) {
+			listPanel.add(new JLabel("Keine Lizenzinformationen gefunden (licenses.xml fehlt oder Fehler)."));
 		}
-		return "";
 	}
 
 	private void addLib(JPanel container, String name, String version, String license, String url) {
 		JPanel item = new JPanel(new BorderLayout());
-		item.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
-				BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+		item.setBorder(
+				BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
+						BorderFactory.createEmptyBorder(8, 0, 8, 0)));
 
-		JLabel nameLabel = new JLabel("<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>");
+		JLabel nameLabel = new JLabel(
+				"<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>");
 		JLabel licenseLabel = new JLabel("License: " + license);
 		licenseLabel.setForeground(Color.GRAY);
 

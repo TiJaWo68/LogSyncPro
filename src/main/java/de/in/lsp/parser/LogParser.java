@@ -1,8 +1,9 @@
 package de.in.lsp.parser;
 
-import de.in.lsp.model.LogEntry;
 import java.io.InputStream;
 import java.util.List;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Strategy interface for parsing different log formats.

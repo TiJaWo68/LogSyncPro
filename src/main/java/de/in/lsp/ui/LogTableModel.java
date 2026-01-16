@@ -1,8 +1,10 @@
 package de.in.lsp.ui;
 
-import de.in.lsp.model.LogEntry;
-import javax.swing.table.AbstractTableModel;
 import java.util.List;
+
+import javax.swing.table.AbstractTableModel;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Custom table model for displaying list of LogEntry objects.

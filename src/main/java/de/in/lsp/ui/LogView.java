@@ -1,9 +1,13 @@
 package de.in.lsp.ui;
 
-import de.in.lsp.model.LogEntry;
-import javax.swing.*;
-import javax.swing.table.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -11,18 +15,50 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.RowFilter;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableRowSorter;
+
+import de.in.lsp.model.LogEntry;
+/**
+ * A self-contained UI component that displays log entries in a table with
+ * filtering capabilities.
+ * 
 /**
  * A self-contained UI component that displays log entries in a table with
  * filtering capabilities.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
+import de.in.lsp.ui.helper.LogViewColumnManager;
+
 public class LogView extends JInternalFrame {
 
     public enum ViewType {
@@ -55,7 +91,7 @@ public class LogView extends JInternalFrame {
 
     private final LogTableModel model;
     private final JTable table;
-    private final TableColumn[] allColumns;
+    private final LogViewColumnManager columnManager;
     private final TableRowSorter<LogTableModel> sorter;
     private final List<LogEntry> entries;
     private final BiConsumer<LogView, LocalDateTime> onSelectionChanged;
@@ -88,20 +124,14 @@ public class LogView extends JInternalFrame {
         this.viewType = viewType;
         this.model = new LogTableModel(entries);
         this.table = new JTable(model);
+        this.columnManager = new LogViewColumnManager(table, model, entries);
         this.sorter = new TableRowSorter<>(model);
         for (int i = 0; i < model.getColumnCount(); i++) {
             sorter.setSortable(i, false);
         }
         table.setRowSorter(sorter); // CRITICAL: Link sorter to table
 
-        analyzeColumns();
-
-        // Store all columns initially
-        TableColumnModel tcm = table.getColumnModel();
-        this.allColumns = new TableColumn[tcm.getColumnCount()];
-        for (int i = 0; i < tcm.getColumnCount(); i++) {
-            allColumns[i] = tcm.getColumn(i);
-        }
+        columnManager.analyzeColumns(hasTimestamps());
 
         setupUI();
 
@@ -146,7 +176,7 @@ public class LogView extends JInternalFrame {
         // Content Panel (Filter + Table)
         JPanel contentPanel = new JPanel(new BorderLayout());
 
-        setupTableColumns();
+        columnManager.setupTableColumns();
 
         // Explicitly set renderer for all columns
         ZebraTableRenderer renderer = new ZebraTableRenderer();
@@ -293,198 +323,8 @@ public class LogView extends JInternalFrame {
         }
     }
 
-    private final Set<Integer> permanentlyHiddenColumns = new HashSet<>();
-
-    private void analyzeColumns() {
-        if (entries.isEmpty())
-            return;
-
-        // 0: Timestamp
-        if (!hasTimestamps())
-            permanentlyHiddenColumns.add(0);
-
-        // 1: Level
-        boolean hasLevel = entries.stream().anyMatch(e -> e.level() != null && !e.level().isEmpty());
-        if (!hasLevel)
-            permanentlyHiddenColumns.add(1);
-
-        // 2: Thread
-        boolean hasThread = entries.stream().anyMatch(e -> e.thread() != null && !e.thread().isEmpty());
-        if (!hasThread)
-            permanentlyHiddenColumns.add(2);
-
-        // 3: Logger
-        boolean hasLogger = entries.stream().anyMatch(e -> e.loggerName() != null && !e.loggerName().isEmpty());
-        if (!hasLogger)
-            permanentlyHiddenColumns.add(3);
-
-        // 4: IP
-        boolean hasIp = entries.stream().anyMatch(e -> e.ip() != null && !e.ip().isEmpty());
-        if (!hasIp)
-            permanentlyHiddenColumns.add(4);
-    }
-
-    private void setupTableColumns() {
-        TableColumnModel tcm = table.getColumnModel();
-        FontMetrics fm = table.getFontMetrics(table.getFont());
-
-        // 0: Timestamp - Fixed
-        TableColumn colTs = getColumnByModelIndex(tcm, 0);
-        int tsWidth = 0;
-        if (colTs != null) {
-            if (permanentlyHiddenColumns.contains(0)) {
-                tcm.removeColumn(colTs);
-            } else {
-                tsWidth = calculateOptimalWidth(fm, 0, 50);
-                setColumnWidth(colTs, tsWidth);
-            }
-        }
-
-        // 1: Level - Fixed
-        TableColumn colLevel = getColumnByModelIndex(tcm, 1);
-        if (colLevel != null) {
-            if (permanentlyHiddenColumns.contains(1)) {
-                tcm.removeColumn(colLevel);
-            } else {
-                setColumnWidth(colLevel, calculateOptimalWidth(fm, 1, 50));
-            }
-        }
-
-        // 2: Thread - Resizable, min 100, pref like timestamp
-        TableColumn colThread = getColumnByModelIndex(tcm, 2);
-        if (colThread != null) {
-            if (permanentlyHiddenColumns.contains(2)) {
-                tcm.removeColumn(colThread);
-            } else {
-                colThread.setMinWidth(100);
-                colThread.setPreferredWidth(tsWidth > 0 ? tsWidth : 120);
-                colThread.setMaxWidth(Integer.MAX_VALUE);
-            }
-        }
-
-        // 3: Logger - Resizable, min 100, pref like timestamp
-        TableColumn colLogger = getColumnByModelIndex(tcm, 3);
-        if (colLogger != null) {
-            if (permanentlyHiddenColumns.contains(3)) {
-                tcm.removeColumn(colLogger);
-            } else {
-                colLogger.setMinWidth(100);
-                colLogger.setPreferredWidth(tsWidth > 0 ? tsWidth : 120);
-                colLogger.setMaxWidth(Integer.MAX_VALUE);
-            }
-        }
-
-        // 4: IP - Fixed
-        TableColumn colIp = getColumnByModelIndex(tcm, 4);
-        if (colIp != null) {
-            if (permanentlyHiddenColumns.contains(4)) {
-                tcm.removeColumn(colIp);
-            } else {
-                setColumnWidth(colIp, calculateOptimalWidth(fm, 4, 50));
-            }
-        }
-
-        // 5: Message - Resizable (Handled by listener for fill)
-        TableColumn colMsg = getColumnByModelIndex(tcm, 5);
-        if (colMsg != null) {
-            colMsg.setMinWidth(100);
-            colMsg.setMaxWidth(Integer.MAX_VALUE);
-            colMsg.setPreferredWidth(400);
-        }
-
-        // 6: Source - Fixed narrow, hide header
-        TableColumn colSource = getColumnByModelIndex(tcm, 6);
-        if (colSource != null) {
-            if (permanentlyHiddenColumns.contains(6)) {
-                tcm.removeColumn(colSource);
-            } else {
-                setColumnWidth(colSource, 24);
-                colSource.setHeaderValue(""); // No header text
-            }
-        }
-
-        // Ensure message column takes correct width initially
-        SwingUtilities.invokeLater(this::adjustMessageColumnWidth);
-
-        // Apply renderer to all currently visible columns
-        ZebraTableRenderer renderer = new ZebraTableRenderer();
-        for (int i = 0; i < tcm.getColumnCount(); i++) {
-            tcm.getColumn(i).setCellRenderer(renderer);
-        }
-    }
-
-    private TableColumn getColumnByModelIndex(TableColumnModel tcm, int modelIndex) {
-        for (int i = 0; i < tcm.getColumnCount(); i++) {
-            if (tcm.getColumn(i).getModelIndex() == modelIndex) {
-                return tcm.getColumn(i);
-            }
-        }
-        return null; // Might be already removed
-    }
-
-    private int calculateOptimalWidth(FontMetrics fm, int modelIndex, int maxEntries) {
-        int maxWidth = fm.stringWidth(model.getColumnName(modelIndex)); // Start with header width
-        int limit = Math.min(maxEntries, model.getRowCount());
-        for (int i = 0; i < limit; i++) {
-            Object value = model.getValueAt(i, modelIndex);
-            if (value != null) {
-                maxWidth = Math.max(maxWidth, fm.stringWidth(value.toString()));
-            }
-        }
-        return maxWidth + 10; // Reduced padding
-    }
-
-    private void setColumnWidth(TableColumn col, int width) {
-        col.setPreferredWidth(width);
-        col.setMinWidth(width);
-        col.setMaxWidth(width);
-    }
-
     public void setColumnVisibility(int modelIndex, boolean visible) {
-        TableColumnModel tcm = table.getColumnModel();
-
-        // Find if it's already in the model
-        int viewIndex = -1;
-        for (int i = 0; i < tcm.getColumnCount(); i++) {
-            if (tcm.getColumn(i).getModelIndex() == modelIndex) {
-                viewIndex = i;
-                break;
-            }
-        }
-
-        if (permanentlyHiddenColumns.contains(modelIndex)) {
-            return; // Cannot show permanently hidden columns
-        }
-
-        if (visible && viewIndex == -1) {
-            // Add column back (at roughly the right position if possible, but append is
-            // easier)
-            tcm.addColumn(allColumns[modelIndex]);
-            // Re-sort view indices to match model indices for consistency
-            sortViewColumnsByModelIndex();
-            setupTableColumns(); // Ensure width/resizing logic is applied to the added column
-        } else if (!visible && viewIndex != -1) {
-            // Remove column
-            tcm.removeColumn(tcm.getColumn(viewIndex));
-        }
-    }
-
-    private void sortViewColumnsByModelIndex() {
-        TableColumnModel tcm = table.getColumnModel();
-        List<TableColumn> currentCols = new ArrayList<>();
-        for (int i = 0; i < tcm.getColumnCount(); i++) {
-            currentCols.add(tcm.getColumn(i));
-        }
-
-        currentCols.sort((c1, c2) -> Integer.compare(c1.getModelIndex(), c2.getModelIndex()));
-
-        // Remove all and add back in sorted order
-        while (tcm.getColumnCount() > 0) {
-            tcm.removeColumn(tcm.getColumn(0));
-        }
-        for (TableColumn col : currentCols) {
-            tcm.addColumn(col);
-        }
+        columnManager.setColumnVisibility(modelIndex, visible);
     }
 
     private void setupMouseListener() {
@@ -618,7 +458,7 @@ public class LogView extends JInternalFrame {
         Font font = table.getFont().deriveFont((float) newSize);
         table.setFont(font);
         table.setRowHeight(newSize + 4); // Add some padding
-        setupTableColumns(); // Recalculate optimal widths for new font
+        columnManager.setupTableColumns(); // Recalculate optimal widths for new font
     }
 
     private void attachFocusTrigger(JComponent component) {
@@ -692,10 +532,7 @@ public class LogView extends JInternalFrame {
     }
 
     public void hideColumnPermanently(int modelIndex) {
-        permanentlyHiddenColumns.add(modelIndex);
-        SwingUtilities.invokeLater(() -> {
-            setupTableColumns();
-        });
+        columnManager.hideColumnPermanently(modelIndex);
     }
 
     private void createFilterRow() {

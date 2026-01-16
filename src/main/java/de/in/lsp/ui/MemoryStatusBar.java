@@ -1,10 +1,21 @@
 package de.in.lsp.ui;
 
-import com.formdev.flatlaf.util.UIScale;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+import com.formdev.flatlaf.util.UIScale;
 
 /**
  * A graphically appealing status bar showing memory usage.

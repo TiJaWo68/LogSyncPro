@@ -1,28 +1,43 @@
 package de.in.lsp;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
-import de.in.lsp.ui.actions.ViewActions;
-import de.in.lsp.ui.actions.RemoteActions;
-import de.in.lsp.ui.actions.FileActions;
-import de.in.lsp.ui.actions.HelpActions;
-import de.in.lsp.ui.LogView;
-import de.in.lsp.ui.MemoryStatusBar;
-import de.in.lsp.ui.ViewManager;
-import de.in.lsp.service.LogStreamServer;
-import de.in.lsp.util.LspLogger;
-import de.in.lsp.util.VersionUtil;
-import de.in.lsp.ui.dialog.LoggingSettingsDialog;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-
+import java.awt.AlphaComposite;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
+import de.in.lsp.ui.LogFileTransferHandler;
+import de.in.lsp.ui.LogSyncProMenu;
+import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.MemoryStatusBar;
+import de.in.lsp.ui.ViewManager;
+import de.in.lsp.ui.actions.FileActions;
+import de.in.lsp.ui.actions.HelpActions;
+import de.in.lsp.ui.actions.RemoteActions;
+import de.in.lsp.ui.actions.ViewActions;
+import de.in.lsp.util.LspLogger;
+import de.in.lsp.util.VersionUtil;
 
 /**
  * Main application class for LogSyncPro.
@@ -41,9 +56,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
     private JDesktopPane centerPanel;
     private MemoryStatusBar statusBar;
-    private JMenu logFileMenu;
-    private JMenuItem mergeItem;
-    private JMenuItem closeSelectedItem;
+    private LogSyncProMenu appMenu;
     private LogView internalLogView;
     private final Map<Integer, Boolean> columnVisibility = new HashMap<>();
 
@@ -96,108 +109,15 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     }
 
     private void setupMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-        JMenu fileMenu = new JMenu("File");
-
-        JMenuItem openItem = new JMenuItem("Open (Multi)");
-        openItem.addActionListener(e -> openLogs());
-        fileMenu.add(openItem);
-
-        JMenuItem importK8sItem = new JMenuItem("Import from K8s via SSH...");
-        importK8sItem.addActionListener(e -> remoteActions.importFromK8s(this, columnVisibility));
-        fileMenu.add(importK8sItem);
-
-        mergeItem = new JMenuItem("Merge Selected Views");
-        mergeItem.addActionListener(e -> viewActions.mergeLogs(this, columnVisibility));
-        mergeItem.setEnabled(false);
-        fileMenu.add(mergeItem);
-
-        closeSelectedItem = new JMenuItem("Close Selected Views");
-        closeSelectedItem.addActionListener(e -> viewActions.closeSelectedViews());
-        closeSelectedItem.setEnabled(false);
-        fileMenu.add(closeSelectedItem);
-
-        fileMenu.addSeparator();
-
-        JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(e -> {
+        Runnable openLogsAction = this::openLogs;
+        Runnable exitAction = () -> {
             LspLogger.info("Exiting application.");
             System.exit(0);
-        });
-        fileMenu.add(exitItem);
+        };
 
-        menuBar.add(fileMenu);
-
-        logFileMenu = new JMenu("Logfile");
-        logFileMenu.setEnabled(false);
-        menuBar.add(logFileMenu);
-
-        JMenu settingsMenu = new JMenu("Settings");
-
-        JMenu receiverMenu = new JMenu("Receiver");
-        for (LogStreamServer receiver : receiverManager.getReceivers()) {
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")",
-                    false);
-            item.addActionListener(e -> {
-                try {
-                    if (item.isSelected()) {
-                        LspLogger.info("Starting receiver on port " + receiver.getPort());
-                        receiverManager.startReceiver(receiver.getPort());
-                    } else {
-                        LspLogger.info("Stopping receiver on port " + receiver.getPort());
-                        receiverManager.stopReceiver(receiver.getPort());
-                    }
-                } catch (Exception ex) {
-                    item.setSelected(false);
-                    LspLogger.error("Failed to start/stop receiver: " + ex.getMessage(), ex);
-                    JOptionPane.showMessageDialog(this, "Failed to start receiver: " + ex.getMessage());
-                }
-            });
-            // Update initial state if already started by params
-            item.setSelected(receiver.isRunning());
-            receiverMenu.add(item);
-        }
-        settingsMenu.add(receiverMenu);
-        settingsMenu.addSeparator();
-
-        JMenu columnsMenu = new JMenu("Columns");
-        for (int i = 0; i < COLUMN_NAMES.length; i++) {
-            final int colIndex = i;
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(COLUMN_NAMES[i], true);
-            item.addActionListener(e -> toggleColumnVisibility(colIndex, item.isSelected()));
-            columnsMenu.add(item);
-        }
-        settingsMenu.add(columnsMenu);
-        settingsMenu.addSeparator();
-
-        JMenuItem loggingSettingsItem = new JMenuItem("Logging...");
-        loggingSettingsItem.addActionListener(e -> new LoggingSettingsDialog(this).setVisible(true));
-        settingsMenu.add(loggingSettingsItem);
-
-        menuBar.add(settingsMenu);
-
-        menuBar.add(Box.createHorizontalGlue());
-
-        JMenu helpMenu = new JMenu("Hilfe");
-        JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
-        quickGuideItem.addActionListener(e -> helpActions.openQuickGuide());
-        helpMenu.add(quickGuideItem);
-
-        JMenuItem aboutItem = new JMenuItem("Über LogSyncPro");
-        aboutItem.addActionListener(e -> helpActions.openAboutDialog());
-        helpMenu.add(aboutItem);
-
-        menuBar.add(helpMenu);
-
-        setJMenuBar(menuBar);
-    }
-
-    private void toggleColumnVisibility(int colIndex, boolean visible) {
-        LspLogger.info("Toggling column '" + COLUMN_NAMES[colIndex] + "' visibility to " + visible);
-        columnVisibility.put(colIndex, visible);
-        for (LogView view : viewManager.getLogViews()) {
-            view.setColumnVisibility(colIndex, visible);
-        }
+        this.appMenu = new LogSyncProMenu(this, viewActions, remoteActions, helpActions, receiverManager, viewManager,
+                columnVisibility, openLogsAction, exitAction);
+        setJMenuBar(appMenu.createMenuBar());
     }
 
     private void setupUI() {
@@ -299,27 +219,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     }
 
     private void setupDragAndDrop() {
-        setTransferHandler(new TransferHandler() {
-            @Override
-            public boolean canImport(TransferSupport support) {
-                return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                if (!canImport(support))
-                    return false;
-                try {
-                    Transferable t = support.getTransferable();
-                    @SuppressWarnings("unchecked")
-                    List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-                    backgroundLoadFiles(files);
-                    return true;
-                } catch (Exception e) {
-                    return false;
-                }
-            }
-        });
+        setTransferHandler(new LogFileTransferHandler(this::backgroundLoadFiles));
     }
 
     private void backgroundLoadFiles(List<File> files) {
@@ -377,17 +277,8 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     }
 
     private void updateLogFileMenu() {
-        boolean hasLogs = !viewManager.getLogViews().isEmpty();
-        logFileMenu.setEnabled(hasLogs);
-        mergeItem.setEnabled(hasLogs);
-        closeSelectedItem.setEnabled(hasLogs);
-
-        logFileMenu.removeAll();
-        for (LogView view : viewManager.getLogViews()) {
-            boolean isVisible = !viewManager.getMinimizedViews().contains(view);
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(view.getTitle(), isVisible);
-            item.addActionListener(e -> viewManager.toggleViewMinimized(view, !item.isSelected()));
-            logFileMenu.add(item);
+        if (appMenu != null) {
+            appMenu.updateLogFileMenu();
         }
     }
 

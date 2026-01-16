@@ -1,10 +1,11 @@
 package de.in.lsp.util;
 
-import de.in.lsp.model.LogEntry;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * A simple logging utility for internal LogSyncPro events.

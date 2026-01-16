@@ -1,14 +1,15 @@
 package de.in.lsp.service;
 
-import de.in.lsp.util.LspLogger;
-import de.in.lsp.model.LogEntry;
-import de.in.lsp.ui.LogView;
-import de.in.lsp.ui.ViewManager;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import de.in.lsp.model.LogEntry;
+import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.ViewManager;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Manages the lifecycle of log stream receivers.

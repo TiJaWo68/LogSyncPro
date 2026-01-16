@@ -1,15 +1,16 @@
 package de.in.lsp.ui.actions;
 
-import de.in.lsp.util.LspLogger;
-import de.in.lsp.service.LogFileService;
-import de.in.lsp.ui.LogView;
-import de.in.lsp.ui.ViewManager;
-
-import javax.swing.*;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import javax.swing.SwingUtilities;
+
+import de.in.lsp.service.LogFileService;
+import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.ViewManager;
+import de.in.lsp.util.LspLogger;
 
 /**
  * Handles file-related actions like loading logs from disk.

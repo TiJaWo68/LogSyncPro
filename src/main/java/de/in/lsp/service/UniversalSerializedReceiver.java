@@ -1,10 +1,5 @@
 package de.in.lsp.service;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import de.in.lsp.model.LogEntry;
-import org.apache.log4j.spi.LoggingEvent;
-import org.apache.logging.log4j.core.LogEvent;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,6 +9,12 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.function.BiConsumer;
+
+import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.LogEvent;
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import de.in.lsp.model.LogEntry;
 
 /**
  * Universal receiver for serialized log events from Logback, Log4j 1.x, and
