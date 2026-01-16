@@ -2,7 +2,6 @@ package de.in.lsp.ui;
 
 import de.in.lsp.model.LogEntry;
 import javax.swing.*;
-import java.awt.*;
 import java.net.SocketAddress;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,18 +22,25 @@ public class ViewManager {
     private final List<LogView> minimizedViews = new CopyOnWriteArrayList<>();
     private final Map<String, List<LogEntry>> pendingBuffers = new ConcurrentHashMap<>();
     private final Map<SocketAddress, LogView> activeStreams = new ConcurrentHashMap<>();
-    private final JPanel centerPanel;
+    private final JDesktopPane desktopPane;
     private final Consumer<LogView> focusCallback;
     private final Runnable layoutChangeCallback;
 
     private LogView focusedLogView;
-    private JComponent currentRootComponent;
     private int fontSize = 12;
 
-    public ViewManager(JPanel centerPanel, Consumer<LogView> focusCallback, Runnable layoutChangeCallback) {
-        this.centerPanel = centerPanel;
+    public ViewManager(JDesktopPane desktopPane, Consumer<LogView> focusCallback, Runnable layoutChangeCallback) {
+        this.desktopPane = desktopPane;
         this.focusCallback = focusCallback;
         this.layoutChangeCallback = layoutChangeCallback;
+
+        // Listen for desktop pane resizes to re-tile
+        desktopPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                rebuildLayout();
+            }
+        });
     }
 
     public List<LogView> getLogViews() {
@@ -50,17 +56,18 @@ public class ViewManager {
     }
 
     public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
-            LogView.LogViewListener listener) {
-        return addLogView(entries, title, columnVisibility, listener, null, null);
+            LogView.LogViewListener listener, LogView.ViewType viewType) {
+        return addLogView(entries, title, columnVisibility, listener, viewType, null, null);
     }
 
     public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
-            LogView.LogViewListener listener, String appName, String clientIp) {
+            LogView.LogViewListener listener, LogView.ViewType viewType, String appName, String clientIp) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> addLogView(entries, title, columnVisibility, listener, appName, clientIp));
-            return null; // Return null if not on EDT, but should be avoided for internal callers
+            SwingUtilities.invokeLater(
+                    () -> addLogView(entries, title, columnVisibility, listener, viewType, appName, clientIp));
+            return null;
         }
-        LogView logView = new LogView(new ArrayList<>(entries), title, this::syncOtherViews, listener);
+        LogView logView = new LogView(new ArrayList<>(entries), title, this::syncOtherViews, listener, viewType);
         logView.setMetaData(appName, clientIp);
         if (!entries.isEmpty() && entries.get(0).loggerName() != null) {
             logView.setInitialLoggerName(entries.get(0).loggerName());
@@ -74,6 +81,8 @@ public class ViewManager {
 
         logViews.add(logView);
         logView.updateFontSize(fontSize);
+        desktopPane.add(logView);
+        logView.setVisible(true);
 
         if (logViews.size() == 1) {
             updateFocusedView(logView);
@@ -87,10 +96,12 @@ public class ViewManager {
     public void removeView(LogView view) {
         logViews.remove(view);
         minimizedViews.remove(view);
+        desktopPane.remove(view);
+
         if (focusedLogView == view) {
             focusedLogView = logViews.isEmpty() ? null : logViews.get(0);
             if (focusedLogView != null) {
-                focusedLogView.setFocused(true);
+                updateFocusedView(focusedLogView);
             }
         }
         rebuildLayout();
@@ -98,6 +109,14 @@ public class ViewManager {
     }
 
     public void minimizeView(LogView view) {
+        try {
+            view.setIcon(true);
+            if (view.getDesktopIcon() != null) {
+                view.getDesktopIcon().setVisible(false);
+            }
+        } catch (java.beans.PropertyVetoException e) {
+            // Ignore
+        }
         if (!minimizedViews.contains(view)) {
             minimizedViews.add(view);
         }
@@ -106,6 +125,14 @@ public class ViewManager {
     }
 
     public void toggleViewMinimized(LogView view, boolean minimized) {
+        try {
+            view.setIcon(minimized);
+            if (minimized && view.getDesktopIcon() != null) {
+                view.getDesktopIcon().setVisible(false);
+            }
+        } catch (java.beans.PropertyVetoException e) {
+            // Ignore
+        }
         if (minimized) {
             if (!minimizedViews.contains(view))
                 minimizedViews.add(view);
@@ -117,45 +144,50 @@ public class ViewManager {
     }
 
     public void rebuildLayout() {
-        centerPanel.removeAll();
-        currentRootComponent = null;
-
         LogView maximized = logViews.stream().filter(LogView::isMaximized).findFirst().orElse(null);
-        if (maximized != null) {
-            centerPanel.add(maximized, BorderLayout.CENTER);
-            currentRootComponent = maximized;
-        } else {
-            List<LogView> visibleViews = logViews.stream()
-                    .filter(v -> !minimizedViews.contains(v))
-                    .toList();
 
-            for (LogView view : visibleViews) {
-                if (currentRootComponent == null) {
-                    currentRootComponent = view;
+        List<LogView> visibleViews = logViews.stream()
+                .filter(v -> !minimizedViews.contains(v))
+                .toList();
+
+        if (maximized != null) {
+            for (LogView v : visibleViews) {
+                if (v == maximized) {
+                    v.setBounds(0, 0, desktopPane.getWidth(), desktopPane.getHeight());
+                    v.toFront();
                 } else {
-                    JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, currentRootComponent, view);
-                    split.setResizeWeight(0.5);
-                    split.setContinuousLayout(true);
-                    currentRootComponent = split;
+                    v.setBounds(0, 0, 0, 0); // Hide others
                 }
             }
+        } else {
+            if (visibleViews.isEmpty())
+                return;
 
-            if (currentRootComponent != null) {
-                centerPanel.add(currentRootComponent, BorderLayout.CENTER);
+            int count = visibleViews.size();
+            int width = desktopPane.getWidth() / count;
+            int height = desktopPane.getHeight();
+
+            for (int i = 0; i < count; i++) {
+                LogView v = visibleViews.get(i);
+                v.setBounds(i * width, 0, width, height);
             }
         }
 
-        centerPanel.revalidate();
-        centerPanel.repaint();
+        desktopPane.revalidate();
+        desktopPane.repaint();
     }
 
     public void updateFocusedView(LogView view) {
         if (focusedLogView != null && focusedLogView != view) {
-            focusedLogView.setFocused(false);
+            // No need to manually set focused false, JInternalFrame handles selection
         }
         focusedLogView = view;
         if (focusedLogView != null) {
-            focusedLogView.setFocused(true);
+            try {
+                focusedLogView.setSelected(true);
+            } catch (java.beans.PropertyVetoException e) {
+                // Ignore
+            }
         }
         focusCallback.accept(focusedLogView);
     }
@@ -209,7 +241,6 @@ public class ViewManager {
     public void handleStreamingEntry(LogEntry entry, SocketAddress remoteAddress, LogView.LogViewListener listener,
             Map<Integer, Boolean> columnVisibility) {
         if (entry == null) {
-            // Connection closed
             activeStreams.remove(remoteAddress);
             return;
         }
@@ -224,7 +255,6 @@ public class ViewManager {
         String clientIp = entry.ip();
         String loggerName = entry.loggerName();
 
-        // Use the robust findView with loggerName heuristic
         LogView existing = findView(appName, clientIp, loggerName);
 
         if (existing != null) {
@@ -254,13 +284,12 @@ public class ViewManager {
                 if (!"RemoteApp".equals(appName)) {
                     title += " (" + clientIp + ")";
                 } else {
-                    title = "Remote: " + entry.getSimpleLoggerName();
+                    title = "Remote(" + clientIp + "): " + entry.getSimpleLoggerName();
                 }
-                addLogView(initialEntries, title, columnVisibility, listener, appName, clientIp);
+                addLogView(initialEntries, title, columnVisibility, listener, LogView.ViewType.TCP, appName,
+                        clientIp);
                 pendingBuffers.remove(key);
 
-                // Add to active streams after view is created (but we need the view instance)
-                // Since addLogView is async, we'll find it again using the more specific lookup
                 SwingUtilities.invokeLater(() -> {
                     LogView created = findView(appName, clientIp, loggerName);
                     if (created != null) {
@@ -272,6 +301,6 @@ public class ViewManager {
     }
 
     public JComponent getCurrentRootComponent() {
-        return currentRootComponent;
+        return desktopPane;
     }
 }
