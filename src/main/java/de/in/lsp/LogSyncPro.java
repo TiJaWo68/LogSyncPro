@@ -12,6 +12,7 @@ import de.in.lsp.ui.ViewManager;
 import de.in.lsp.service.LogStreamServer;
 import de.in.lsp.util.LspLogger;
 import de.in.lsp.util.VersionUtil;
+import de.in.lsp.ui.dialog.LoggingSettingsDialog;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -38,7 +39,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     private HelpActions helpActions;
     private de.in.lsp.service.ReceiverManager receiverManager;
 
-    private JPanel centerPanel;
+    private JDesktopPane centerPanel;
     private MemoryStatusBar statusBar;
     private JMenu logFileMenu;
     private JMenuItem mergeItem;
@@ -67,8 +68,10 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     }
 
     private void setupInternalLogging() {
-        this.internalLogView = viewManager.addLogView(new ArrayList<>(), "LogSyncPro", columnVisibility, this);
+        internalLogView = viewManager.addLogView(new ArrayList<>(), "Internal Log", columnVisibility, this,
+                LogView.ViewType.INTERNAL);
         internalLogView.hideColumnPermanently(4); // Hide IP column
+        internalLogView.hideColumnPermanently(6); // Hide Source column
         viewManager.minimizeView(internalLogView);
         LspLogger.addListener(entry -> {
             SwingUtilities.invokeLater(() -> {
@@ -165,6 +168,12 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
             columnsMenu.add(item);
         }
         settingsMenu.add(columnsMenu);
+        settingsMenu.addSeparator();
+
+        JMenuItem loggingSettingsItem = new JMenuItem("Logging...");
+        loggingSettingsItem.addActionListener(e -> new LoggingSettingsDialog(this).setVisible(true));
+        settingsMenu.add(loggingSettingsItem);
+
         menuBar.add(settingsMenu);
 
         menuBar.add(Box.createHorizontalGlue());
@@ -193,13 +202,13 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
     private void setupUI() {
         setLayout(new BorderLayout());
-        centerPanel = new JPanel(new BorderLayout()) {
+        centerPanel = new JDesktopPane() {
             private FlatSVGIcon watermark;
 
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (viewManager != null && viewManager.getCurrentRootComponent() != null)
+                if (viewManager != null && !viewManager.getLogViews().isEmpty())
                     return;
 
                 if (watermark == null) {
@@ -384,6 +393,10 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
     @Override
     public void onClose(LogView view) {
+        if (view == internalLogView) {
+            viewManager.minimizeView(view);
+            return;
+        }
         viewManager.removeView(view);
     }
 
