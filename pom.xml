@@ -8,8 +8,14 @@
     <artifactId>LogSyncPro</artifactId>
     <version>0.4.0</version>
 
+    <description>Advanced Log Viewer</description>
+    <inceptionYear>2026</inceptionYear>
+    <organization>
+        <name>de.in</name>
+    </organization>
+
     <properties>
-        <app.version.string>0.4.0.0</app.version.string>
+        <app.version.string>${project.version}.0</app.version.string>
         <app.copyright>TiJaWo68 @ 2026</app.copyright>
         <app.product.name>LogSyncPro</app.product.name>
         <maven.compiler.source>21</maven.compiler.source>
@@ -211,7 +217,7 @@
                             <versionInfo>
                                 <fileVersion>${app.version.string}</fileVersion>
                                 <txtFileVersion>${app.version.string}</txtFileVersion>
-                                <fileDescription>${app.product.name} - Advanced Log Viewer</fileDescription>
+                                <fileDescription>${project.description}</fileDescription>
                                 <copyright>${app.copyright}</copyright>
                                 <productVersion>${app.version.string}</productVersion>
                                 <txtProductVersion>${app.version.string}</txtProductVersion>
