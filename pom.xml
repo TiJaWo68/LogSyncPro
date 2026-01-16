@@ -6,9 +6,12 @@
 
     <groupId>de.in.lsp</groupId>
     <artifactId>LogSyncPro</artifactId>
-    <version>0.2.1</version>
+    <version>0.4.0</version>
 
     <properties>
+        <app.version.string>0.4.0.0</app.version.string>
+        <app.copyright>TiJaWo68 @ 2026</app.copyright>
+        <app.product.name>LogSyncPro</app.product.name>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -206,15 +209,15 @@
                                 <minVersion>21</minVersion>
                             </jre>
                             <versionInfo>
-                                <fileVersion>0.2.1.0</fileVersion>
-                                <txtFileVersion>0.2.1.0</txtFileVersion>
-                                <fileDescription>LogSyncPro - Advanced Log Viewer</fileDescription>
-                                <copyright>TiJaWo68 @ 2026</copyright>
-                                <productVersion>0.2.1.0</productVersion>
-                                <txtProductVersion>0.2.1.0</txtProductVersion>
-                                <productName>LogSyncPro</productName>
-                                <internalName>LogSyncPro</internalName>
-                                <originalFilename>LogSyncPro.exe</originalFilename>
+                                <fileVersion>${app.version.string}</fileVersion>
+                                <txtFileVersion>${app.version.string}</txtFileVersion>
+                                <fileDescription>${app.product.name} - Advanced Log Viewer</fileDescription>
+                                <copyright>${app.copyright}</copyright>
+                                <productVersion>${app.version.string}</productVersion>
+                                <txtProductVersion>${app.version.string}</txtProductVersion>
+                                <productName>${app.product.name}</productName>
+                                <internalName>${app.product.name}</internalName>
+                                <originalFilename>${app.product.name}.exe</originalFilename>
                             </versionInfo>
                         </configuration>
                     </execution>
