@@ -241,7 +241,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                            <licensesOutputDirectory>${project.build.directory}/classes</licensesOutputDirectory>
                             <licensesOutputFile>${project.build.directory}/classes/licenses.xml</licensesOutputFile>
                         </configuration>
                     </execution>
