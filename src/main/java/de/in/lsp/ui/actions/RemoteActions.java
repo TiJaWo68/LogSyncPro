@@ -156,7 +156,8 @@ public class RemoteActions {
                         List<LogEntry> entries = lm.parseStream(is, sourceName);
                         LspLogger.info("Finished streaming " + entries.size() + " entries from " + target.pod);
                         SwingUtilities.invokeLater(() -> {
-                            viewManager.addLogView(entries, sourceName, columnVisibility, listener);
+                            viewManager.addLogView(entries, sourceName, columnVisibility, listener,
+                                    LogView.ViewType.K8S);
                         });
                     } catch (Exception ex) {
                         LspLogger.error("Error streaming logs from " + target.pod, ex);
