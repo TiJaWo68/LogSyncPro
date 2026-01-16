@@ -88,7 +88,7 @@ public class ArchiveLogLoader {
 
     public List<LogEntry> loadFrom7z(File file) throws Exception {
         List<LogEntry> allEntries = new ArrayList<>();
-        try (SevenZFile sevenZFile = new SevenZFile(file)) {
+        try (SevenZFile sevenZFile = new SevenZFile.Builder().setFile(file).get()) {
             org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry entry;
             while ((entry = sevenZFile.getNextEntry()) != null) {
                 if (!entry.isDirectory()) {
