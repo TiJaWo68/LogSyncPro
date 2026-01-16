@@ -1,0 +1,8 @@
+<configuration>
+    <appender name="LSP" class="de.in.lsp.util.LspLogbackAppender">
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="LSP" />
+    </root>
+</configuration>

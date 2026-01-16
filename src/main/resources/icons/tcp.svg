@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Outer shell of the RJ45 port -->
+  <rect x="2" y="3" width="12" height="10" rx="1" fill="#555555"/>
+  <!-- Inner opening with the characteristic shape -->
+  <path d="M4 5h8v5H9.5V8.5h-3V10H4V5z" fill="#333333"/>
+  <!-- Contact pins in a golden color -->
+  <g stroke="#FFD700" stroke-width="0.75" stroke-linecap="round">
+    <line x1="5.5" y1="5.5" x2="5.5" y2="7.5"/>
+    <line x1="6.75" y1="5.5" x2="6.75" y2="7.5"/>
+    <line x1="8" y1="5.5" x2="8" y2="7.5"/>
+    <line x1="9.25" y1="5.5" x2="9.25" y2="7.5"/>
+    <line x1="10.5" y1="5.5" x2="10.5" y2="7.5"/>
+  </g>
+</svg>
