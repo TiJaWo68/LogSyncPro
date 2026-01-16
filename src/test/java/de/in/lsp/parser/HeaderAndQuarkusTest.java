@@ -38,7 +38,7 @@ public class HeaderAndQuarkusTest {
         // Check header entry
         LogEntry header = entries.get(0);
         assertNull(header.timestamp(), "Header entry should have null timestamp");
-        assertEquals("UNKNOWN", header.level());
+        assertEquals("", header.level());
         assertTrue(header.message().contains("Installing Certs..."));
         assertTrue(header.message().contains("Installing /certificates/other-cert-1.crt"));
 
