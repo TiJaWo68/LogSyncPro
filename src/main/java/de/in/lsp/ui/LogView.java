@@ -60,7 +60,6 @@ public class LogView extends JInternalFrame {
     private final List<LogEntry> entries;
     private final BiConsumer<LogView, LocalDateTime> onSelectionChanged;
     private final LogViewListener listener;
-    private final JCheckBox selectionBox = new JCheckBox();
     private LogDetailView detailView;
     private JSplitPane splitPane;
     private JScrollPane tableScrollPane;
@@ -76,9 +75,13 @@ public class LogView extends JInternalFrame {
     private MultiSelectFilter loggerFilter;
     private JTextField messageFilterField;
 
+    private boolean isSelectedForAction = false; // Internal selection state
+
     public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
             LogViewListener listener, ViewType viewType) {
         super(title, true, true, true, true);
+        // putClientProperty("JInternalFrame.titleAlignment", "center"); // Removed
+        // centering
         this.entries = entries;
         this.onSelectionChanged = onSelectionChanged;
         this.listener = listener;
@@ -104,14 +107,8 @@ public class LogView extends JInternalFrame {
 
         setupMouseListener();
 
-        // Set frame icon
-        try {
-            String path = (viewType != null ? viewType.getIconPath() : ViewType.FILE.getIconPath());
-            com.formdev.flatlaf.extras.FlatSVGIcon icon = new com.formdev.flatlaf.extras.FlatSVGIcon(path, 16, 16);
-            setFrameIcon(icon);
-        } catch (Exception e) {
-            // Ignore if icon fails to load
-        }
+        // Set initial frame icon
+        setFrameIcon(getNormalIcon());
 
         // Use InternalFrameListener instead of custom listeners where possible
         addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
@@ -135,15 +132,14 @@ public class LogView extends JInternalFrame {
                 listener.onMaximize(LogView.this);
             }
         });
+
+        // Setup Title Bar Selection Listener
+        setupTitleBarListener();
     }
 
     private void setupUI() {
         setLayout(new BorderLayout());
         setBorder(null); // Let DesktopPane handle borders
-
-        // In JInternalFrame, we'll put the selectionBox in a small corner or bottom
-        // but for now, we remove the custom title bar.
-        // We might want to keep the selectionBox somewhere.
 
         createDetailView();
 
@@ -561,12 +557,53 @@ public class LogView extends JInternalFrame {
         return model.getEntries();
     }
 
+    private void setupTitleBarListener() {
+        // Try to add mouse listener to the title pane (NorthPane)
+        SwingUtilities.invokeLater(() -> {
+            if (getUI() instanceof javax.swing.plaf.basic.BasicInternalFrameUI ui) {
+                JComponent titlePane = ui.getNorthPane();
+                if (titlePane != null) {
+                    titlePane.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (SwingUtilities.isRightMouseButton(e)) {
+                                setViewSelected(!isViewSelected());
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private Icon getNormalIcon() {
+        try {
+            String path = (viewType != null ? viewType.getIconPath() : ViewType.FILE.getIconPath());
+            return new com.formdev.flatlaf.extras.FlatSVGIcon(path, 16, 16);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Icon getSelectedIcon() {
+        try {
+            return new com.formdev.flatlaf.extras.FlatSVGIcon("icons/selected.svg", 16, 16);
+        } catch (Exception e) {
+            return getNormalIcon(); // Fallback
+        }
+    }
+
     public boolean isViewSelected() {
-        return selectionBox.isSelected();
+        return isSelectedForAction;
     }
 
     public void setViewSelected(boolean selected) {
-        selectionBox.setSelected(selected);
+        this.isSelectedForAction = selected;
+        if (selected) {
+            setFrameIcon(getSelectedIcon());
+        } else {
+            setFrameIcon(getNormalIcon());
+        }
     }
 
     public JTable getTable() {
@@ -961,4 +998,5 @@ public class LogView extends JInternalFrame {
         JScrollBar sb = tableScrollPane.getVerticalScrollBar();
         sb.setValue(sb.getMaximum());
     }
+
 }
