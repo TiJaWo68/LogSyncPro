@@ -60,7 +60,7 @@ public class MultiPatternLogParser implements LogParser {
                 if (newEntry != null) {
                     if (lastEntry == null && !headerBuffer.isEmpty()) {
                         String combinedHeader = String.join("\n", headerBuffer);
-                        allEntries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader,
+                        allEntries.add(new LogEntry(null, "", "", "", "", combinedHeader,
                                 sourceName, combinedHeader));
                         headerBuffer.clear();
                     }
@@ -78,7 +78,7 @@ public class MultiPatternLogParser implements LogParser {
             if (lastEntry == null && !headerBuffer.isEmpty()) {
                 String combinedHeader = String.join("\n", headerBuffer);
                 allEntries
-                        .add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader, sourceName,
+                        .add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName,
                                 combinedHeader));
             }
         }
