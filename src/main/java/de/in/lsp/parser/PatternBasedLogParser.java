@@ -171,7 +171,7 @@ public class PatternBasedLogParser implements LogParser {
                         // If this is the first match, flush header buffer as a single multi-line entry
                         if (lastEntry == null && !headerBuffer.isEmpty()) {
                             String combinedHeader = String.join("\n", headerBuffer);
-                            entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader,
+                            entries.add(new LogEntry(null, "", "", "", "", combinedHeader,
                                     sourceName, combinedHeader));
                             headerBuffer.clear();
                         }
@@ -198,7 +198,7 @@ public class PatternBasedLogParser implements LogParser {
             // If we NEVER found a match, but have headers, add them as one entry
             if (lastEntry == null && !headerBuffer.isEmpty()) {
                 String combinedHeader = String.join("\n", headerBuffer);
-                entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader, sourceName,
+                entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName,
                         combinedHeader));
             }
         }
@@ -237,10 +237,10 @@ public class PatternBasedLogParser implements LogParser {
                     }
                 }
 
-                String level = (levelGroup != -1) ? matcher.group(levelGroup).trim() : "UNKNOWN";
-                String thread = (threadGroup != -1) ? matcher.group(threadGroup).trim() : "UNKNOWN";
-                String logger = (loggerGroup != -1) ? matcher.group(loggerGroup).trim() : "UNKNOWN";
-                String ip = (ipGroup != -1) ? matcher.group(ipGroup).trim() : "UNKNOWN";
+                String level = (levelGroup != -1) ? matcher.group(levelGroup).trim() : "";
+                String thread = (threadGroup != -1) ? matcher.group(threadGroup).trim() : "";
+                String logger = (loggerGroup != -1) ? matcher.group(loggerGroup).trim() : "";
+                String ip = (ipGroup != -1) ? matcher.group(ipGroup).trim() : "";
                 String message = (messageGroup != -1) ? matcher.group(messageGroup) : line;
 
                 return new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
