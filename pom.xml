@@ -217,7 +217,7 @@
                             <versionInfo>
                                 <fileVersion>${app.version.string}</fileVersion>
                                 <txtFileVersion>${app.version.string}</txtFileVersion>
-                                <fileDescription>${project.description}</fileDescription>
+                                <fileDescription>${app.product.name} - ${project.description}</fileDescription>
                                 <copyright>${app.copyright}</copyright>
                                 <productVersion>${app.version.string}</productVersion>
                                 <txtProductVersion>${app.version.string}</txtProductVersion>
@@ -242,7 +242,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                            <licensesOutputXml>${project.build.directory}/classes/licenses.xml</licensesOutputXml>
+                            <licensesOutputFile>${project.build.directory}/classes/licenses.xml</licensesOutputFile>
                         </configuration>
                     </execution>
                 </executions>
