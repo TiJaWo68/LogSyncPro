@@ -12,6 +12,7 @@ import javax.swing.JOptionPane;
 import de.in.lsp.LogSyncPro;
 import de.in.lsp.service.LogStreamServer;
 import de.in.lsp.service.ReceiverManager;
+import de.in.lsp.service.UpdateService;
 import de.in.lsp.ui.actions.HelpActions;
 import de.in.lsp.ui.actions.RemoteActions;
 import de.in.lsp.ui.actions.ViewActions;
@@ -32,6 +33,7 @@ public class LogSyncProMenu {
     private final ReceiverManager receiverManager;
     private final ViewManager viewManager;
     private final Map<Integer, Boolean> columnVisibility;
+    private final UpdateService updateService;
     private final Runnable openLogsAction;
     private final Runnable exitAction;
 
@@ -43,7 +45,8 @@ public class LogSyncProMenu {
 
     public LogSyncProMenu(LogSyncPro mainFrame, ViewActions viewActions, RemoteActions remoteActions,
             HelpActions helpActions, ReceiverManager receiverManager, ViewManager viewManager,
-            Map<Integer, Boolean> columnVisibility, Runnable openLogsAction, Runnable exitAction) {
+            Map<Integer, Boolean> columnVisibility, UpdateService updateService, Runnable openLogsAction,
+            Runnable exitAction) {
         this.mainFrame = mainFrame;
         this.viewActions = viewActions;
         this.remoteActions = remoteActions;
@@ -51,6 +54,7 @@ public class LogSyncProMenu {
         this.receiverManager = receiverManager;
         this.viewManager = viewManager;
         this.columnVisibility = columnVisibility;
+        this.updateService = updateService;
         this.openLogsAction = openLogsAction;
         this.exitAction = exitAction;
     }
@@ -137,6 +141,10 @@ public class LogSyncProMenu {
         JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
         quickGuideItem.addActionListener(e -> helpActions.openQuickGuide());
         helpMenu.add(quickGuideItem);
+
+        JMenuItem updateItem = new JMenuItem("Update");
+        updateItem.addActionListener(e -> updateService.checkForUpdatesAsync(true));
+        helpMenu.add(updateItem);
 
         JMenuItem aboutItem = new JMenuItem("Über LogSyncPro");
         aboutItem.addActionListener(e -> helpActions.openAboutDialog());

@@ -38,6 +38,7 @@ import de.in.lsp.ui.actions.RemoteActions;
 import de.in.lsp.ui.actions.ViewActions;
 import de.in.lsp.util.LspLogger;
 import de.in.lsp.util.VersionUtil;
+import de.in.lsp.service.UpdateService;
 
 /**
  * Main application class for LogSyncPro.
@@ -53,6 +54,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     private FileActions fileActions;
     private HelpActions helpActions;
     private de.in.lsp.service.ReceiverManager receiverManager;
+    private UpdateService updateService;
 
     private JDesktopPane centerPanel;
     private MemoryStatusBar statusBar;
@@ -73,8 +75,11 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         initColumnVisibility();
         setupUI();
         this.receiverManager = new de.in.lsp.service.ReceiverManager(viewManager, this, columnVisibility);
+        this.updateService = new UpdateService(version, de.in.updraft.UpdateChannel.STABLE);
         setupMenuBar();
         setupInternalLogging();
+
+        this.updateService.checkForUpdatesAsync(false);
 
         handleArguments(args);
         LspLogger.info("LogSyncPro started.");
@@ -116,7 +121,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         };
 
         this.appMenu = new LogSyncProMenu(this, viewActions, remoteActions, helpActions, receiverManager, viewManager,
-                columnVisibility, openLogsAction, exitAction);
+                columnVisibility, updateService, openLogsAction, exitAction);
         setJMenuBar(appMenu.createMenuBar());
     }
 
