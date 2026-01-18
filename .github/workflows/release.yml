@@ -26,13 +26,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-          server-id: github
-          settings-path: ${{ github.workspace }}
 
       - name: Build with Maven
         env:
           GITHUB_TOKEN: ${{ secrets.CR_PAT }}
-        run: mvn clean package
+        run: mvn clean package -s .github/workflows/settings.xml
 
       - name: Prepare Nightly Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
