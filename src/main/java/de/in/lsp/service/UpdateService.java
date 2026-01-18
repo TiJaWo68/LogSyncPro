@@ -24,10 +24,29 @@ public class UpdateService {
 
     public UpdateService(JFrame owner, String currentVersion, UpdateChannel channel) {
         this.owner = owner;
-        this.currentVersion = currentVersion;
+
+        String testVersion = System.getProperty("lsp.test.version");
+        if (testVersion != null && !testVersion.isEmpty()) {
+            this.currentVersion = testVersion;
+            de.in.lsp.util.LspLogger.warn("Running with overridden test version: " + testVersion);
+        } else {
+            this.currentVersion = currentVersion;
+        }
+
         // Repo TiJaWo68/LogSyncPro
-        this.updater = new GithubUpdater(currentVersion,
-                new GithubReleaseSource("TiJaWo68", "LogSyncPro", channel));
+        UpdateChannel configuredChannel = channel;
+        String channelProp = System.getProperty("lsp.update.channel");
+        if (channelProp != null && !channelProp.isEmpty()) {
+            try {
+                configuredChannel = UpdateChannel.valueOf(channelProp.toUpperCase());
+                de.in.lsp.util.LspLogger.info("Update channel overridden to: " + configuredChannel);
+            } catch (IllegalArgumentException e) {
+                de.in.lsp.util.LspLogger.warn("Invalid update channel property: " + channelProp);
+            }
+        }
+
+        this.updater = new GithubUpdater(this.currentVersion,
+                new GithubReleaseSource("TiJaWo68", "LogSyncPro", configuredChannel));
     }
 
     /**
@@ -36,15 +55,20 @@ public class UpdateService {
     public void checkForUpdatesAsync(boolean manual) {
         CompletableFuture.runAsync(() -> {
             try {
+                de.in.lsp.util.LspLogger.info("Checking for updates... (Manual: " + manual + ")");
                 UpdateInfo info = updater.checkForUpdates();
                 if (info != null) {
+                    de.in.lsp.util.LspLogger.info("Update found: " + info.version());
                     if (manual || !shouldSkip(info.version())) {
                         SwingUtilities.invokeLater(() -> showDialog(info));
                     }
-                } else if (manual) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(owner,
-                            "Your version " + currentVersion + " is up to date.",
-                            "No Update Available", JOptionPane.INFORMATION_MESSAGE));
+                } else {
+                    de.in.lsp.util.LspLogger.info("No update found.");
+                    if (manual) {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(owner,
+                                "Your version " + currentVersion + " is up to date.",
+                                "No Update Available", JOptionPane.INFORMATION_MESSAGE));
+                    }
                 }
             } catch (Exception e) {
                 de.in.lsp.util.LspLogger.error("Failed to check for updates", e);
