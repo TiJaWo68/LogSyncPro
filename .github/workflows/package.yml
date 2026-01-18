@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
 
     steps:
     - uses: actions/checkout@v4
@@ -20,8 +21,12 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+        server-id: github
+        settings-path: ${{ github.workspace }}
 
     - name: Build with Maven
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: mvn -B package --file pom.xml
 
     - name: Install 7zip
