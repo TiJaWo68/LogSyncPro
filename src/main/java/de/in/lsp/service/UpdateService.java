@@ -1,14 +1,20 @@
 package de.in.lsp.service;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
+import java.util.prefs.Preferences;
+
+import javax.swing.*;
+
+import de.in.lsp.LogSyncPro;
+import de.in.lsp.ui.LspUpdateDialog;
 import de.in.updraft.GithubUpdater;
 import de.in.updraft.UpdateChannel;
 import de.in.updraft.UpdateInfo;
 import de.in.updraft.source.GithubReleaseSource;
-import de.in.lsp.ui.LspUpdateDialog;
-
-import javax.swing.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.prefs.Preferences;
 
 /**
  * Service to manage update checks and preferences.
@@ -45,8 +51,16 @@ public class UpdateService {
             }
         }
 
+        Path appJar;
+        try {
+            appJar = Paths.get(LogSyncPro.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (URISyntaxException e) {
+            de.in.lsp.util.LspLogger.error("Failed to determine application JAR path", e);
+            throw new RuntimeException(e);
+        }
+
         this.updater = new GithubUpdater(this.currentVersion,
-                new GithubReleaseSource("TiJaWo68", "LogSyncPro", configuredChannel));
+                new GithubReleaseSource("TiJaWo68", "LogSyncPro", configuredChannel), appJar);
     }
 
     /**
