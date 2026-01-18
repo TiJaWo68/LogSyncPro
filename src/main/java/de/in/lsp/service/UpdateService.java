@@ -20,7 +20,10 @@ public class UpdateService {
     private final GithubUpdater updater;
     private final String currentVersion;
 
-    public UpdateService(String currentVersion, UpdateChannel channel) {
+    private final JFrame owner;
+
+    public UpdateService(JFrame owner, String currentVersion, UpdateChannel channel) {
+        this.owner = owner;
         this.currentVersion = currentVersion;
         // Repo TiJaWo68/LogSyncPro
         this.updater = new GithubUpdater(currentVersion,
@@ -39,14 +42,14 @@ public class UpdateService {
                         SwingUtilities.invokeLater(() -> showDialog(info));
                     }
                 } else if (manual) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(owner,
                             "Your version " + currentVersion + " is up to date.",
                             "No Update Available", JOptionPane.INFORMATION_MESSAGE));
                 }
             } catch (Exception e) {
                 de.in.lsp.util.LspLogger.error("Failed to check for updates", e);
                 if (manual) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(owner,
                             "Failed to check for updates: " + e.getMessage(),
                             "Error", JOptionPane.ERROR_MESSAGE));
                 }
@@ -65,7 +68,7 @@ public class UpdateService {
     }
 
     private void showDialog(UpdateInfo info) {
-        LspUpdateDialog dialog = new LspUpdateDialog(null, info, updater, this);
+        LspUpdateDialog dialog = new LspUpdateDialog(owner, info, updater, this);
         dialog.setVisible(true);
     }
 }

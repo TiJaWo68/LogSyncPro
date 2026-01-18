@@ -41,7 +41,7 @@ jobs:
         cp -r target/lib deploy-win/
         # Create the archive
         cd deploy-win
-        7z a ../LogSyncPro.7z *
+        7z a -tzip ../LogSyncPro.zip *
         cd ..
 
     - name: Create Tar Package (Linux)
@@ -70,7 +70,7 @@ jobs:
         sleep 2
         
         # Create new release
-        gh release create nightly LogSyncPro.7z LogSyncPro-Linux.tar.gz \
+        gh release create nightly LogSyncPro.zip LogSyncPro-Linux.tar.gz \
           --title "Nightly Build" \
           --notes "Latest build (Run ${{ github.run_number }}) from commit ${{ github.sha }}" \
           --prerelease \

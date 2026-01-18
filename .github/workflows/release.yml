@@ -45,7 +45,7 @@ jobs:
           mkdir -p deploy-win
           cp target/LogSyncPro.exe deploy-win/
           cp -r target/lib deploy-win/
-          cd deploy-win && 7z a ../LogSyncPro.7z * && cd ..
+          cd deploy-win && 7z a -tzip ../LogSyncPro.zip * && cd ..
 
           # Linux Package
           mkdir -p deploy-linux
@@ -70,7 +70,7 @@ jobs:
           git push origin nightly
           
           # Create nightly release
-          gh release create nightly LogSyncPro.7z LogSyncPro-Linux.tar.gz \
+          gh release create nightly LogSyncPro.zip LogSyncPro-Linux.tar.gz \
             --title "Nightly Build" \
             --notes "Automated nightly build from main branch." \
             --prerelease
@@ -81,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          gh release create "$TAG_NAME" LogSyncPro.7z LogSyncPro-Linux.tar.gz \
+          gh release create "$TAG_NAME" LogSyncPro.zip LogSyncPro-Linux.tar.gz \
             --title "Release $TAG_NAME" \
             --notes "Official release $TAG_NAME" \
             --latest

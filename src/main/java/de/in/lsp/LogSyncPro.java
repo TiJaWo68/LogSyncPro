@@ -75,7 +75,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         initColumnVisibility();
         setupUI();
         this.receiverManager = new de.in.lsp.service.ReceiverManager(viewManager, this, columnVisibility);
-        this.updateService = new UpdateService(version, de.in.updraft.UpdateChannel.STABLE);
+        this.updateService = new UpdateService(this, version, de.in.updraft.UpdateChannel.STABLE);
         setupMenuBar();
         setupInternalLogging();
 
