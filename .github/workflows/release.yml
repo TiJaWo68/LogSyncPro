@@ -42,6 +42,7 @@ jobs:
           gh release delete nightly --yes || true
           
           # Create new nightly tag
+          git tag -d nightly || true
           git tag nightly
           git push origin nightly
           
