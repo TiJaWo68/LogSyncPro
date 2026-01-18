@@ -32,16 +32,32 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y p7zip-full
 
-    - name: Create 7z Package
+    - name: Create 7z Package (Windows)
       run: |
-        # Create a deployment directory
-        mkdir deployment
+        # Create a deployment directory for Windows
+        mkdir -p deploy-win
         # Copy executable and lib folder
-        cp target/LogSyncPro.exe deployment/
-        cp -r target/lib deployment/
+        cp target/LogSyncPro.exe deploy-win/
+        cp -r target/lib deploy-win/
         # Create the archive
-        cd deployment
+        cd deploy-win
         7z a ../LogSyncPro.7z *
+        cd ..
+
+    - name: Create Tar Package (Linux)
+      run: |
+        # Create a deployment directory for Linux
+        mkdir -p deploy-linux
+        # Copy wrapper script, jar, and lib folder
+        cp src/main/scripts/LogSyncPro deploy-linux/
+        chmod +x deploy-linux/LogSyncPro
+        # Rename the versioned jar to generic name for the script
+        cp target/LogSyncPro-*.jar deploy-linux/LogSyncPro.jar
+        cp -r target/lib deploy-linux/
+        # Create the archive
+        cd deploy-linux
+        tar -czf ../LogSyncPro-Linux.tar.gz *
+        cd ..
 
     - name: Update Nightly Release
       env:
@@ -54,7 +70,7 @@ jobs:
         sleep 2
         
         # Create new release
-        gh release create nightly LogSyncPro.7z \
+        gh release create nightly LogSyncPro.7z LogSyncPro-Linux.tar.gz \
           --title "Nightly Build" \
           --notes "Latest build (Run ${{ github.run_number }}) from commit ${{ github.sha }}" \
           --prerelease \

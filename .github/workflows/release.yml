@@ -37,6 +37,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+      - name: Create Release Packages
+        run: |
+          sudo apt-get update && sudo apt-get install -y p7zip-full
+          
+          # Windows Package
+          mkdir -p deploy-win
+          cp target/LogSyncPro.exe deploy-win/
+          cp -r target/lib deploy-win/
+          cd deploy-win && 7z a ../LogSyncPro.7z * && cd ..
+
+          # Linux Package
+          mkdir -p deploy-linux
+          cp src/main/scripts/LogSyncPro deploy-linux/
+          chmod +x deploy-linux/LogSyncPro
+          cp target/LogSyncPro-*.jar deploy-linux/LogSyncPro.jar
+          cp -r target/lib deploy-linux/
+          cd deploy-linux && tar -czf ../LogSyncPro-Linux.tar.gz * && cd ..
+
+      - name: Prepare Nightly Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           # Delete existing nightly tag and release
           git push --delete origin nightly || true
           gh release delete nightly --yes || true
@@ -47,7 +70,7 @@ jobs:
           git push origin nightly
           
           # Create nightly release
-          gh release create nightly target/*.jar \
+          gh release create nightly LogSyncPro.7z LogSyncPro-Linux.tar.gz \
             --title "Nightly Build" \
             --notes "Automated nightly build from main branch." \
             --prerelease
@@ -58,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          gh release create "$TAG_NAME" target/*.jar \
+          gh release create "$TAG_NAME" LogSyncPro.7z LogSyncPro-Linux.tar.gz \
             --title "Release $TAG_NAME" \
             --notes "Official release $TAG_NAME" \
             --latest
