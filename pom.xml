@@ -32,7 +32,7 @@
     <repositories>
 		<repository>
 			<id>github</id>
-			<url>https://maven.pkg.github.com/TiJaWo68/SimpleUpDraft4J</url>
+			<url>https://maven.pkg.github.com/TiJaWo68/simpleupdraft4j</url>
 		</repository>
 	</repositories>
 
