@@ -63,7 +63,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Delete existing release and tag to simulate a "moving" nightly tag
+        # Delete existing release and tag
         gh release delete nightly --cleanup-tag -y || true
         
         # Give GitHub a moment to propagate deletion if needed

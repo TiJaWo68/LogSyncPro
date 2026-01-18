@@ -61,8 +61,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Delete existing nightly tag and release
-          git push --delete origin nightly || true
           gh release delete nightly --yes || true
+          git push --delete origin nightly || true
           
           # Create new nightly tag
           git tag -d nightly || true
