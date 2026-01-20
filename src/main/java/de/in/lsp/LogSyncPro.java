@@ -8,10 +8,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.io.File;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -65,12 +68,28 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     private static final String[] COLUMN_NAMES = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message",
             "Source" };
 
+    private static final String PREF_X = "frame.x";
+    private static final String PREF_Y = "frame.y";
+    private static final String PREF_WIDTH = "frame.width";
+    private static final String PREF_HEIGHT = "frame.height";
+    private static final String PREF_STATE = "frame.state";
+    private static final String PREF_FONT_SIZE = "logview.fontsize";
+
     public LogSyncPro(String[] args) {
         String version = VersionUtil.retrieveVersionFromPom("de.in.lsp", "LogSyncPro");
         setTitle("LogSyncPro " + version);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                saveFrameState();
+                LspLogger.info("Exiting application.");
+                System.exit(0);
+            }
+        });
         setMinimumSize(new Dimension(1000, 700));
 
+        loadFrameState();
         setupIcon();
         initColumnVisibility();
         setupUI();
@@ -82,6 +101,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         this.updateService.checkForUpdatesAsync(false);
 
         handleArguments(args);
+        appMenu.updateReceiverMenu();
         LspLogger.info("LogSyncPro started.");
     }
 
@@ -116,6 +136,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
     private void setupMenuBar() {
         Runnable openLogsAction = this::openLogs;
         Runnable exitAction = () -> {
+            saveFrameState();
             LspLogger.info("Exiting application.");
             System.exit(0);
         };
@@ -161,6 +182,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         add(statusBar, BorderLayout.SOUTH);
 
         viewManager = new ViewManager(centerPanel, this::onViewFocusChanged, this::updateLogFileMenu);
+        viewManager.setFontSize(loadFontSize());
         viewActions = new ViewActions(this, viewManager);
         remoteActions = new RemoteActions(this, viewManager);
         fileActions = new FileActions(viewManager);
@@ -185,7 +207,9 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         actionMap.put("zoomIn", new AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                viewManager.setFontSize(Math.max(8, Math.min(40, viewManager.getFontSize() + 1)));
+                int newSize = Math.max(8, Math.min(40, viewManager.getFontSize() + 1));
+                viewManager.setFontSize(newSize);
+                saveFontSize(newSize);
             }
         });
 
@@ -194,7 +218,9 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         actionMap.put("zoomOut", new AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                viewManager.setFontSize(Math.max(8, Math.min(40, viewManager.getFontSize() - 1)));
+                int newSize = Math.max(8, Math.min(40, viewManager.getFontSize() - 1));
+                viewManager.setFontSize(newSize);
+                saveFontSize(newSize);
             }
         });
 
@@ -312,11 +338,48 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
         viewManager.updateFocusedView(view);
     }
 
+    private void loadFrameState() {
+        Preferences prefs = Preferences.userNodeForPackage(LogSyncPro.class);
+        int x = prefs.getInt(PREF_X, -1);
+        int y = prefs.getInt(PREF_Y, -1);
+        int width = prefs.getInt(PREF_WIDTH, 1000);
+        int height = prefs.getInt(PREF_HEIGHT, 700);
+        int state = prefs.getInt(PREF_STATE, NORMAL);
+
+        if (x != -1 && y != -1) {
+            setLocation(x, y);
+        } else {
+            setLocationRelativeTo(null);
+        }
+        setSize(width, height);
+        setExtendedState(state);
+    }
+
+    private void saveFrameState() {
+        Preferences prefs = Preferences.userNodeForPackage(LogSyncPro.class);
+        int state = getExtendedState();
+
+        prefs.putInt(PREF_X, getX());
+        prefs.putInt(PREF_Y, getY());
+        prefs.putInt(PREF_WIDTH, getWidth());
+        prefs.putInt(PREF_HEIGHT, getHeight());
+        prefs.putInt(PREF_STATE, state);
+    }
+
+    private int loadFontSize() {
+        Preferences prefs = Preferences.userNodeForPackage(LogSyncPro.class);
+        return prefs.getInt(PREF_FONT_SIZE, 12);
+    }
+
+    private void saveFontSize(int size) {
+        Preferences prefs = Preferences.userNodeForPackage(LogSyncPro.class);
+        prefs.putInt(PREF_FONT_SIZE, size);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             FlatDarkLaf.setup();
             LogSyncPro app = new LogSyncPro(args);
-            app.setLocationRelativeTo(null);
             app.setVisible(true);
         });
     }
