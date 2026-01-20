@@ -1,5 +1,6 @@
 package de.in.lsp.ui;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.Box;
@@ -8,6 +9,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 
 import de.in.lsp.LogSyncPro;
 import de.in.lsp.service.LogStreamServer;
@@ -37,6 +40,7 @@ public class LogSyncProMenu {
     private final Runnable openLogsAction;
     private final Runnable exitAction;
 
+    private final Map<Integer, JCheckBoxMenuItem> receiverMenuItems = new HashMap<>();
     private JMenu logFileMenu;
     private JMenuItem mergeItem;
     private JMenuItem closeSelectedItem;
@@ -96,6 +100,21 @@ public class LogSyncProMenu {
         JMenu settingsMenu = new JMenu("Settings");
 
         JMenu receiverMenu = new JMenu("Receiver");
+        receiverMenu.addMenuListener(new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent e) {
+                updateReceiverMenu();
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent e) {
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+            }
+        });
+
         for (LogStreamServer receiver : receiverManager.getReceivers()) {
             JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")",
                     receiver.isRunning());
@@ -114,6 +133,7 @@ public class LogSyncProMenu {
                     JOptionPane.showMessageDialog(mainFrame, "Failed to start receiver: " + ex.getMessage());
                 }
             });
+            receiverMenuItems.put(receiver.getPort(), item);
             receiverMenu.add(item);
         }
         settingsMenu.add(receiverMenu);
@@ -175,6 +195,15 @@ public class LogSyncProMenu {
             JCheckBoxMenuItem item = new JCheckBoxMenuItem(view.getTitle(), isVisible);
             item.addActionListener(e -> viewManager.toggleViewMinimized(view, !item.isSelected()));
             logFileMenu.add(item);
+        }
+    }
+
+    public void updateReceiverMenu() {
+        for (LogStreamServer receiver : receiverManager.getReceivers()) {
+            JCheckBoxMenuItem item = receiverMenuItems.get(receiver.getPort());
+            if (item != null) {
+                item.setSelected(receiver.isRunning());
+            }
         }
     }
 }
