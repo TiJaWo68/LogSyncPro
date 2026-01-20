@@ -2,7 +2,7 @@
     <appender name="LSP" class="de.in.lsp.util.LspLogbackAppender">
     </appender>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="LSP" />
     </root>
 </configuration>
