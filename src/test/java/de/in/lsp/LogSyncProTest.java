@@ -1,9 +1,16 @@
 package de.in.lsp;
 
-import de.in.lsp.service.LogFileService;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Test;
+
+import de.in.lsp.service.LogFileService;
+
+/**
+ * Test for LogSyncPro main entry and common utilities.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
+ */
 class LogSyncProTest {
 
     @Test
