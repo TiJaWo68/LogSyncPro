@@ -29,7 +29,6 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
     private MultiSelectFilter threadFilter;
     private MultiSelectFilter loggerFilter;
     private JTextField messageFilterField;
-    private javax.swing.JToggleButton showAllToggle;
 
     public LogViewFilterPanel(JTable table, TableRowSorter<LogTableModel> sorter,
             List<LogEntry> entries) {
@@ -67,21 +66,6 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
                 applyFilters();
             }
-        });
-
-        showAllToggle = new javax.swing.JToggleButton(IconFactory.getShowAllIcon());
-        showAllToggle.setToolTipText("Show all available options in filters (Toggle)");
-        showAllToggle.setFocusable(false);
-        showAllToggle.setOpaque(false);
-        showAllToggle.setContentAreaFilled(false);
-        showAllToggle.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-        showAllToggle.setSelected(false);
-        showAllToggle.addActionListener(e -> {
-            boolean showAll = showAllToggle.isSelected();
-            levelFilter.setShowAllMode(showAll);
-            threadFilter.setShowAllMode(showAll);
-            loggerFilter.setShowAllMode(showAll);
-            updateFilters();
         });
     }
 
@@ -225,12 +209,7 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
                     yield btn;
                 }
             }
-            case 6 -> {
-                JPanel p = new JPanel(new java.awt.BorderLayout());
-                p.setOpaque(false);
-                p.add(showAllToggle, java.awt.BorderLayout.EAST);
-                yield p;
-            }
+            case 6 -> createHeaderLabel("");
             default -> {
                 JPanel p = new JPanel();
                 p.setOpaque(false);

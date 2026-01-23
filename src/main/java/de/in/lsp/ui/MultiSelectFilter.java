@@ -98,34 +98,76 @@ public class MultiSelectFilter extends JPanel {
         popup = new JPopupMenu();
         popup.setLayout(new BorderLayout());
 
-        // In showAllMode, we show domainOptions. Otherwise, we show availableOptions.
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 5, 2, 5));
+
+        // "Select All" always refers to the FULL DOMAIN to act as a proper reset
+        JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.containsAll(domainOptions));
+        selectAll.addActionListener(e -> {
+            if (selectAll.isSelected()) {
+                selectedOptions.addAll(domainOptions);
+            } else {
+                selectedOptions.clear();
+            }
+            refreshCheckboxes();
+            onSelectionChanged.accept(new HashSet<>(selectedOptions));
+            updateButtonText();
+        });
+        headerPanel.add(selectAll, BorderLayout.CENTER);
+
+        // Toggle button for showing all options
+        javax.swing.JToggleButton toggleBtn = new javax.swing.JToggleButton(IconFactory.getShowAllIcon());
+        toggleBtn.setToolTipText("Toggle: Show filtered options / Show all options");
+        toggleBtn.setSelected(showAllMode);
+        toggleBtn.setFocusable(false);
+        toggleBtn.setBorderPainted(false);
+        toggleBtn.setContentAreaFilled(false);
+        // Ensure popup doesn't close on click
+        toggleBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                e.consume(); // Prevent popup hidden
+                showAllMode = !showAllMode;
+                toggleBtn.setSelected(showAllMode);
+                rebuildPopupList();
+            }
+        });
+        headerPanel.add(toggleBtn, BorderLayout.EAST);
+
+        popup.add(headerPanel, BorderLayout.NORTH);
+        popup.add(new javax.swing.JSeparator(), BorderLayout.CENTER); // Placeholder, mostly ignored due to BorderLayout
+                                                                      // rules but ensures separation
+
+        // Content placeholder
+        rebuildPopupList();
+
+        popup.show(button, 0, button.getHeight());
+    }
+
+    private void rebuildPopupList() {
+        // Remove existing scrollpane or "No options" label (added at CENTER)
+        // We iterate and remove components that are NOT the header (NORTH)
+        for (Component c : popup.getComponents()) {
+            // Header is at NORTH, we want to replace CENTER
+            // BorderLayout layout manager checks constraints, but we can just check
+            // reference if we kept it.
+            // Simpler: Remove everything except header. But JPopupMenu structure is flat.
+            // Let's rely on type or non-header.
+            if (c instanceof JPanel && ((JPanel) c).getLayout() instanceof BorderLayout) {
+                // This is likely our header panel
+                continue;
+            }
+            popup.remove(c);
+        }
+
         Set<String> optionsToShow = showAllMode ? domainOptions : availableOptions;
 
         if (optionsToShow.isEmpty()) {
-            popup.add(new JMenuItem("No options available"));
+            popup.add(new JMenuItem("No options available"), BorderLayout.CENTER);
         } else {
             JPanel contentPanel = new JPanel();
             contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
             contentPanel.setOpaque(false);
-
-            // "Select All" always refers to the FULL DOMAIN to act as a proper reset
-            JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.containsAll(domainOptions));
-            selectAll.addActionListener(e -> {
-                if (selectAll.isSelected()) {
-                    selectedOptions.addAll(domainOptions);
-                } else {
-                    selectedOptions.clear();
-                }
-                refreshCheckboxes();
-                onSelectionChanged.accept(new HashSet<>(selectedOptions));
-                updateButtonText();
-            });
-            contentPanel.add(selectAll);
-
-            // Separator
-            javax.swing.JSeparator sep = new javax.swing.JSeparator();
-            sep.setMaximumSize(new java.awt.Dimension(Short.MAX_VALUE, 2));
-            contentPanel.add(sep);
 
             List<String> sortedOptions = new ArrayList<>(optionsToShow);
             java.util.Collections.sort(sortedOptions);
@@ -146,7 +188,10 @@ public class MultiSelectFilter extends JPanel {
                     } else {
                         selectedOptions.remove(option);
                     }
-                    selectAll.setSelected(selectedOptions.containsAll(domainOptions));
+
+                    // Update Select All state in header
+                    updateSelectAllState();
+
                     onSelectionChanged.accept(new HashSet<>(selectedOptions));
                     updateButtonText();
                 });
@@ -159,25 +204,45 @@ public class MultiSelectFilter extends JPanel {
 
             // Limit height if too many items
             if (optionsToShow.size() > 10) {
-                scrollPane.setPreferredSize(new java.awt.Dimension(200, 300));
+                scrollPane.setPreferredSize(new java.awt.Dimension(Math.max(200, button.getWidth()), 300));
+            } else {
+                // Ensure min width
+                scrollPane.setPreferredSize(
+                        new java.awt.Dimension(Math.max(200, button.getWidth()), scrollPane.getPreferredSize().height));
             }
 
             popup.add(scrollPane, BorderLayout.CENTER);
         }
+        popup.revalidate();
+        popup.repaint();
+    }
 
-        popup.show(button, 0, button.getHeight());
+    private void updateSelectAllState() {
+        if (popup == null)
+            return;
+        for (Component c : popup.getComponents()) {
+            if (c instanceof JPanel headerPanel) {
+                for (Component hc : headerPanel.getComponents()) {
+                    if (hc instanceof JCheckBox selectAllCb && "Select All".equals(selectAllCb.getText())) {
+                        selectAllCb.setSelected(selectedOptions.containsAll(domainOptions));
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     private void refreshCheckboxes() {
-        if (popup == null || popup.getComponentCount() == 0)
+        if (popup == null)
             return;
 
-        Component comp = popup.getComponent(0);
-        if (comp instanceof javax.swing.JScrollPane scrollPane) {
-            JPanel viewportOnly = (JPanel) scrollPane.getViewport().getView();
-            for (Component c : viewportOnly.getComponents()) {
-                if (c instanceof JCheckBox cb && !cb.getText().equals("Select All")) {
-                    cb.setSelected(selectedOptions.contains(cb.getText()));
+        for (Component c : popup.getComponents()) {
+            if (c instanceof javax.swing.JScrollPane scrollPane) {
+                JPanel viewportOnly = (JPanel) scrollPane.getViewport().getView();
+                for (Component comp : viewportOnly.getComponents()) {
+                    if (comp instanceof JCheckBox cb) {
+                        cb.setSelected(selectedOptions.contains(cb.getText()));
+                    }
                 }
             }
         }
