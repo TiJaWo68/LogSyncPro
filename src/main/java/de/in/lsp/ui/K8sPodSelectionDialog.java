@@ -10,7 +10,6 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
@@ -61,31 +60,9 @@ public class K8sPodSelectionDialog extends JDialog {
         table.setRowSorter(sorter);
 
         K8sPodSelectionFilterPanel filterPanel = new K8sPodSelectionFilterPanel(table, sorter);
-        table.setTableHeader(null);
+        FilteredTablePanel filteredTablePanel = new FilteredTablePanel(table, filterPanel);
 
-        JScrollPane tableScrollPane = new JScrollPane(table);
-
-        JPanel headerContainer = new JPanel(new BorderLayout());
-        headerContainer.setOpaque(false);
-
-        JScrollPane headerScroll = new JScrollPane(filterPanel);
-        headerScroll.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        headerScroll.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        headerScroll.setBorder(null);
-        headerScroll.setOpaque(false);
-        headerScroll.getViewport().setOpaque(false);
-
-        tableScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
-            headerScroll.getHorizontalScrollBar().setValue(e.getValue());
-        });
-
-        headerContainer.add(headerScroll, BorderLayout.CENTER);
-
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.add(headerContainer, BorderLayout.NORTH);
-        contentPanel.add(tableScrollPane, BorderLayout.CENTER);
-
-        add(contentPanel, BorderLayout.CENTER);
+        add(filteredTablePanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton okButton = new JButton("Import Selected");
