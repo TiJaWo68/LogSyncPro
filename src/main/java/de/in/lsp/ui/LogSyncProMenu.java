@@ -27,23 +27,16 @@ import de.in.lsp.util.LspLogger;
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
-public class LogSyncProMenu {
+public class LogSyncProMenu extends JMenuBar {
 
-    private final LogSyncPro mainFrame;
-    private final ViewActions viewActions;
-    private final RemoteActions remoteActions;
-    private final HelpActions helpActions;
     private final ReceiverManager receiverManager;
     private final ViewManager viewManager;
     private final Map<Integer, Boolean> columnVisibility;
-    private final UpdateService updateService;
-    private final Runnable openLogsAction;
-    private final Runnable exitAction;
 
     private final Map<Integer, JCheckBoxMenuItem> receiverMenuItems = new HashMap<>();
-    private JMenu logFileMenu;
-    private JMenuItem mergeItem;
-    private JMenuItem closeSelectedItem;
+    private final JMenu logFileMenu;
+    private final JMenuItem mergeItem;
+    private final JMenuItem closeSelectedItem;
 
     private final String[] COLUMN_NAMES = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
 
@@ -51,20 +44,10 @@ public class LogSyncProMenu {
             HelpActions helpActions, ReceiverManager receiverManager, ViewManager viewManager,
             Map<Integer, Boolean> columnVisibility, UpdateService updateService, Runnable openLogsAction,
             Runnable exitAction) {
-        this.mainFrame = mainFrame;
-        this.viewActions = viewActions;
-        this.remoteActions = remoteActions;
-        this.helpActions = helpActions;
         this.receiverManager = receiverManager;
         this.viewManager = viewManager;
         this.columnVisibility = columnVisibility;
-        this.updateService = updateService;
-        this.openLogsAction = openLogsAction;
-        this.exitAction = exitAction;
-    }
 
-    public JMenuBar createMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
 
         JMenuItem openItem = new JMenuItem("Open (Multi)");
@@ -91,11 +74,11 @@ public class LogSyncProMenu {
         exitItem.addActionListener(e -> exitAction.run());
         fileMenu.add(exitItem);
 
-        menuBar.add(fileMenu);
+        add(fileMenu);
 
         logFileMenu = new JMenu("Logfile");
         logFileMenu.setEnabled(false);
-        menuBar.add(logFileMenu);
+        add(logFileMenu);
 
         JMenu settingsMenu = new JMenu("Settings");
 
@@ -153,9 +136,9 @@ public class LogSyncProMenu {
         loggingSettingsItem.addActionListener(e -> new LoggingSettingsDialog(mainFrame).setVisible(true));
         settingsMenu.add(loggingSettingsItem);
 
-        menuBar.add(settingsMenu);
+        add(settingsMenu);
 
-        menuBar.add(Box.createHorizontalGlue());
+        add(Box.createHorizontalGlue());
 
         JMenu helpMenu = new JMenu("Hilfe");
         JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
@@ -170,9 +153,7 @@ public class LogSyncProMenu {
         aboutItem.addActionListener(e -> helpActions.openAboutDialog());
         helpMenu.add(aboutItem);
 
-        menuBar.add(helpMenu);
-
-        return menuBar;
+        add(helpMenu);
     }
 
     private void toggleColumnVisibility(int colIndex, boolean visible) {
