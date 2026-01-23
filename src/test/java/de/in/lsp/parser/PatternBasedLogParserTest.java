@@ -1,12 +1,22 @@
 package de.in.lsp.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
-import de.in.lsp.model.LogEntry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
+
+import de.in.lsp.model.LogEntry;
+
+/**
+ * Test for pattern-based log parsing.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
+ */
 public class PatternBasedLogParserTest {
 
     @Test
