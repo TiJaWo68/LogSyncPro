@@ -1,14 +1,16 @@
 package de.in.lsp.parser;
 
-import de.in.lsp.model.LogEntry;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * JUnit test class for verifying the functionality of LogParser and
