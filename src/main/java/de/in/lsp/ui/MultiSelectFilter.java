@@ -195,11 +195,14 @@ public class MultiSelectFilter extends JPanel {
             scrollPane.setBorder(null);
             scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-            // Calculate proper height: numItems * RowHeight (approx 25px)
+            // Calculate proper height based on actual content
+            // We need to ask the contentPanel for its preferred size after adding
+            // components
+            java.awt.Dimension contentSize = contentPanel.getPreferredSize();
+            int totalHeight = contentSize.height;
+
             // Limit to ScreenHeight * 0.6 or 600px
-            int rowHeight = 25;
-            int totalHeight = optionsToShow.size() * rowHeight;
-            int maxHeight = 600; // Increased max height
+            int maxHeight = 600;
             try {
                 // Try to get screen height if graphic environment is available
                 maxHeight = java.awt.Toolkit.getDefaultToolkit().getScreenSize().height * 2 / 3;
@@ -207,13 +210,13 @@ public class MultiSelectFilter extends JPanel {
                 // Headless or error
             }
 
-            int prefHeight = Math.min(totalHeight + 10, maxHeight);
-            // Ensure min height for at least a few items if they exist
+            int prefHeight = Math.min(totalHeight + 5, maxHeight); // +5 for borders/padding safety
+            // Ensure min height for at least a few items if they exist but don't force it
+            // if content is small
             if (optionsToShow.size() > 0)
-                prefHeight = Math.max(prefHeight, 50);
+                prefHeight = Math.max(prefHeight, 30); // Min reasonable height
 
-            int width = Math.max(250, button.getWidth()); // Min width 250 for readability
-
+            int width = Math.max(250, button.getWidth());
             scrollPane.setPreferredSize(new java.awt.Dimension(width, prefHeight));
 
             popup.add(scrollPane, BorderLayout.CENTER);
