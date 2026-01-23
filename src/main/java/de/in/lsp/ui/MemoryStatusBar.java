@@ -26,7 +26,6 @@ public class MemoryStatusBar extends JPanel {
 
     private final JProgressBar memoryBar;
     private final JLabel statusLabel;
-    private final Timer refreshTimer;
     private final Timer loadingTimer;
     private int loadingStep = 0;
 
@@ -48,7 +47,7 @@ public class MemoryStatusBar extends JPanel {
         add(statusLabel, BorderLayout.WEST);
         add(container, BorderLayout.EAST);
 
-        refreshTimer = new Timer(2000, e -> updateMemoryInfo());
+        Timer refreshTimer = new Timer(2000, e -> updateMemoryInfo());
         refreshTimer.start();
 
         loadingTimer = new Timer(300, e -> animateLoading());
