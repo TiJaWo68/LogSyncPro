@@ -8,8 +8,9 @@ import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 
 import de.in.lsp.service.LogFileService;
-import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.LogViewListener;
 import de.in.lsp.ui.ViewManager;
+import de.in.lsp.ui.ViewType;
 import de.in.lsp.util.LspLogger;
 
 /**
@@ -27,7 +28,7 @@ public class FileActions {
     }
 
     public void backgroundLoadFiles(List<File> files, Consumer<String> statusConsumer,
-            LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
+            LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
         LspLogger.info("Starting background loading of " + files.size() + " files.");
         logFileService.backgroundLoadFiles(files, statusConsumer, (appName, group) -> {
             String title = appName;
@@ -38,7 +39,7 @@ public class FileActions {
             LspLogger.info("Loaded application '" + appName + "' with " + group.getEntries().size() + " entries.");
             SwingUtilities.invokeLater(
                     () -> viewManager.addLogView(group.getEntries(), finalTitle, columnVisibility, listener,
-                            LogView.ViewType.FILE));
+                            ViewType.FILE));
         });
     }
 }
