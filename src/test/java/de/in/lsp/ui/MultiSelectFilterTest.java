@@ -39,25 +39,47 @@ public class MultiSelectFilterTest {
     }
 
     @Test
-    public void testSetOptionsMaintainsPartialSelection() {
+    public void testFacetedSearchIndicatorPersistence() {
         AtomicInteger callbackCount = new AtomicInteger(0);
         MultiSelectFilter filter = new MultiSelectFilter("Test", opts -> callbackCount.incrementAndGet());
 
-        Set<String> options1 = Set.of("A", "B", "C");
-        filter.setOptions(options1); // Callback 1
+        Set<String> domain = Set.of("Namespace-A", "Namespace-B", "Namespace-C");
+        filter.setOptions(domain); // Initial domain setup. All selected.
+        assertFalse(filter.isActive(), "Should not be active when all are selected");
 
-        filter.setSelectedOptions(Set.of("A", "B")); // Callback 2
+        // User manually selects ONLY Namespace-A
+        filter.setSelectedOptions(Set.of("Namespace-A"));
+        assertTrue(filter.isActive(), "Should be active when only a subset is selected");
+        assertEquals(Set.of("Namespace-A"), filter.getSelectedOptions());
+
+        // Faceted search: another column filters the data so only Namespace-A remains
+        // VISIBLE
+        filter.setOptions(Set.of("Namespace-A"));
+
+        // BUG FIX CHECK:
+        assertTrue(filter.isActive(),
+                "Should REMAIN active even if only Namespace-A is visible, because B and C are still deselected in the domain");
+        assertEquals(Set.of("Namespace-A"), filter.getSelectedOptions());
+    }
+
+    @Test
+    public void testSelectAllAsReset() {
+        MultiSelectFilter filter = new MultiSelectFilter("Test", opts -> {
+        });
+
+        Set<String> domain = Set.of("A", "B", "C");
+        filter.setOptions(domain);
+
+        // Filter to A
+        filter.setSelectedOptions(Set.of("A"));
         assertTrue(filter.isActive());
-        assertEquals(2, callbackCount.get());
 
-        Set<String> options2 = Set.of("A", "B", "D");
-        filter.setOptions(options2);
+        // Even if only A is visible
+        filter.setOptions(Set.of("A"));
 
-        // Should NOT automatically select "D" because NOT all were selected before
-        // AND should NOT trigger callback because the effective selection {"A", "B"}
-        // remains the same.
-        assertEquals(2, callbackCount.get());
-        assertEquals(Set.of("A", "B"), filter.getSelectedOptions());
-        assertTrue(filter.isActive());
+        // "Resetting" by selecting all
+        filter.setSelectedOptions(filter.getAllOptions());
+        assertFalse(filter.isActive(), "Filter should be inactive after selecting all domain options");
+        assertEquals(3, filter.getSelectedOptions().size());
     }
 }
