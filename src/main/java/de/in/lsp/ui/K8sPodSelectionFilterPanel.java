@@ -24,6 +24,7 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
     private MultiSelectFilter namespaceFilter;
     private MultiSelectFilter podFilter;
     private MultiSelectFilter containerFilter;
+    private javax.swing.JToggleButton showAllToggle;
     private JCheckBox selectAllCheckBox;
 
     public K8sPodSelectionFilterPanel(JTable table, TableRowSorter<DefaultTableModel> sorter) {
@@ -49,6 +50,21 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
         selectAllCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
         selectAllCheckBox.setToolTipText("Select / Deselect All Visible");
         selectAllCheckBox.addActionListener(e -> toggleSelectAll());
+
+        showAllToggle = new javax.swing.JToggleButton(IconFactory.getShowAllIcon());
+        showAllToggle.setToolTipText("Show all available options in filters (Toggle)");
+        showAllToggle.setFocusable(false);
+        showAllToggle.setOpaque(false);
+        showAllToggle.setContentAreaFilled(false);
+        showAllToggle.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 2, 0, 2));
+        showAllToggle.setSelected(false);
+        showAllToggle.addActionListener(e -> {
+            boolean showAll = showAllToggle.isSelected();
+            namespaceFilter.setShowAllMode(showAll);
+            podFilter.setShowAllMode(showAll);
+            containerFilter.setShowAllMode(showAll);
+            // No need to trigger reload, next popup open will reflect it
+        });
     }
 
     @Override
@@ -188,7 +204,13 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
             case 0 -> selectAllCheckBox;
             case 1 -> namespaceFilter;
             case 2 -> podFilter;
-            case 3 -> containerFilter;
+            case 3 -> {
+                JPanel p = new JPanel(new java.awt.BorderLayout());
+                p.setOpaque(false);
+                p.add(containerFilter, java.awt.BorderLayout.CENTER);
+                p.add(showAllToggle, java.awt.BorderLayout.EAST);
+                yield p;
+            }
             default -> {
                 JPanel p = new JPanel();
                 p.setOpaque(false);

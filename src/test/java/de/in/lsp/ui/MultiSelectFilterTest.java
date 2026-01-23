@@ -82,4 +82,34 @@ public class MultiSelectFilterTest {
         assertFalse(filter.isActive(), "Filter should be inactive after selecting all domain options");
         assertEquals(3, filter.getSelectedOptions().size());
     }
+
+    @Test
+    public void testShowAllModeToggle() {
+        MultiSelectFilter filter = new MultiSelectFilter("Test", opts -> {
+        });
+
+        Set<String> domain = Set.of("A", "B", "C");
+        filter.setOptions(domain);
+
+        // Reduce visible options to just A
+        filter.setOptions(Set.of("A"));
+
+        // Default mode: Show All = false -> Popup should show only A (filtered)
+        // We can't verify popup content easily, but we verify state logic
+
+        filter.setShowAllMode(true);
+        // Should still be inactive if full domain selected (implicitly)
+        assertFalse(filter.isActive());
+
+        // Select only A
+        filter.setSelectedOptions(Set.of("A"));
+        assertTrue(filter.isActive());
+
+        filter.setShowAllMode(false);
+        assertTrue(filter.isActive());
+
+        // If we select all logic:
+        filter.setSelectedOptions(Set.of("A", "B", "C"));
+        assertFalse(filter.isActive());
+    }
 }

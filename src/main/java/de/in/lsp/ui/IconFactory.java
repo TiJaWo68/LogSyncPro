@@ -36,4 +36,8 @@ public class IconFactory {
     public static Icon getSelectedIcon() {
         return getIcon(SELECTED_ICON_PATH, 16);
     }
+
+    public static Icon getShowAllIcon() {
+        return getIcon("icons/show_all.svg", 16);
+    }
 }

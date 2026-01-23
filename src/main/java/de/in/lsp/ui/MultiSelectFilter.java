@@ -33,6 +33,7 @@ public class MultiSelectFilter extends JPanel {
     private final Set<String> selectedOptions = new HashSet<>();
     private final JButton button;
     private JPopupMenu popup;
+    private boolean showAllMode = false;
 
     public MultiSelectFilter(String title, Consumer<Set<String>> onSelectionChanged) {
         this.title = title;
@@ -48,6 +49,10 @@ public class MultiSelectFilter extends JPanel {
         button.setHorizontalAlignment(SwingConstants.LEFT);
         button.addActionListener(e -> showPopup());
         add(button, BorderLayout.CENTER);
+    }
+
+    public void setShowAllMode(boolean showAllMode) {
+        this.showAllMode = showAllMode;
     }
 
     public void setOptions(Set<String> options) {
@@ -93,10 +98,14 @@ public class MultiSelectFilter extends JPanel {
         popup = new JPopupMenu();
         popup.setLayout(new BoxLayout(popup, BoxLayout.Y_AXIS));
 
-        if (domainOptions.isEmpty()) {
+        // In showAllMode, we show domainOptions. Otherwise, we show availableOptions.
+        Set<String> optionsToShow = showAllMode ? domainOptions : availableOptions;
+
+        if (optionsToShow.isEmpty()) {
             popup.add(new JMenuItem("No options available"));
         } else {
-            JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.size() == domainOptions.size());
+            // "Select All" always refers to the FULL DOMAIN to act as a proper reset
+            JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.containsAll(domainOptions));
             selectAll.addActionListener(e -> {
                 if (selectAll.isSelected()) {
                     selectedOptions.addAll(domainOptions);
@@ -110,23 +119,26 @@ public class MultiSelectFilter extends JPanel {
             popup.add(selectAll);
             popup.addSeparator();
 
-            List<String> sortedOptions = new ArrayList<>(domainOptions);
+            List<String> sortedOptions = new ArrayList<>(optionsToShow);
             java.util.Collections.sort(sortedOptions);
 
             for (String option : sortedOptions) {
                 boolean isAvailable = availableOptions.contains(option);
                 JCheckBox cb = new JCheckBox(option, selectedOptions.contains(option));
-                if (!isAvailable) {
+
+                // If showing all, style unavailable options
+                if (showAllMode && !isAvailable) {
                     cb.setForeground(Color.GRAY);
                     cb.setFont(cb.getFont().deriveFont(Font.ITALIC));
                 }
+
                 cb.addActionListener(e -> {
                     if (cb.isSelected()) {
                         selectedOptions.add(option);
                     } else {
                         selectedOptions.remove(option);
                     }
-                    selectAll.setSelected(selectedOptions.size() == domainOptions.size());
+                    selectAll.setSelected(selectedOptions.containsAll(domainOptions));
                     onSelectionChanged.accept(new HashSet<>(selectedOptions));
                     updateButtonText();
                 });
