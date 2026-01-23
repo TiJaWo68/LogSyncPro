@@ -57,8 +57,35 @@ public class K8sPodSelectionDialog extends JDialog {
 
         table = new JTable(tableModel);
         table.setFillsViewportHeight(true);
-        table.setAutoCreateRowSorter(true);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(tableModel);
+        table.setRowSorter(sorter);
+
+        K8sPodSelectionFilterPanel filterPanel = new K8sPodSelectionFilterPanel(table, sorter);
+        table.setTableHeader(null);
+
+        JScrollPane tableScrollPane = new JScrollPane(table);
+
+        JPanel headerContainer = new JPanel(new BorderLayout());
+        headerContainer.setOpaque(false);
+
+        JScrollPane headerScroll = new JScrollPane(filterPanel);
+        headerScroll.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        headerScroll.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        headerScroll.setBorder(null);
+        headerScroll.setOpaque(false);
+        headerScroll.getViewport().setOpaque(false);
+
+        tableScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
+            headerScroll.getHorizontalScrollBar().setValue(e.getValue());
+        });
+
+        headerContainer.add(headerScroll, BorderLayout.CENTER);
+
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.add(headerContainer, BorderLayout.NORTH);
+        contentPanel.add(tableScrollPane, BorderLayout.CENTER);
+
+        add(contentPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton okButton = new JButton("Import Selected");
