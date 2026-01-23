@@ -60,12 +60,12 @@ public class ViewManager {
     }
 
     public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
-            LogView.LogViewListener listener, LogView.ViewType viewType) {
+            LogViewListener listener, ViewType viewType) {
         return addLogView(entries, title, columnVisibility, listener, viewType, null, null);
     }
 
     public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility,
-            LogView.LogViewListener listener, LogView.ViewType viewType, String appName, String clientIp) {
+            LogViewListener listener, ViewType viewType, String appName, String clientIp) {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(
                     () -> addLogView(entries, title, columnVisibility, listener, viewType, appName, clientIp));
@@ -242,7 +242,7 @@ public class ViewManager {
         });
     }
 
-    public void handleStreamingEntry(LogEntry entry, SocketAddress remoteAddress, LogView.LogViewListener listener,
+    public void handleStreamingEntry(LogEntry entry, SocketAddress remoteAddress, LogViewListener listener,
             Map<Integer, Boolean> columnVisibility) {
         if (entry == null) {
             activeStreams.remove(remoteAddress);
@@ -290,7 +290,7 @@ public class ViewManager {
                 } else {
                     title = "Remote(" + clientIp + "): " + entry.getSimpleLoggerName();
                 }
-                addLogView(initialEntries, title, columnVisibility, listener, LogView.ViewType.TCP, appName,
+                addLogView(initialEntries, title, columnVisibility, listener, ViewType.TCP, appName,
                         clientIp);
                 pendingBuffers.remove(key);
 
