@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.in.lsp.model.LogEntry;
-import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.LogViewListener;
 import de.in.lsp.ui.ViewManager;
 import de.in.lsp.util.LspLogger;
 
@@ -21,10 +21,10 @@ public class ReceiverManager {
 
     private final List<LogStreamServer> receivers = new ArrayList<>();
     private final ViewManager viewManager;
-    private final LogView.LogViewListener listener;
+    private final LogViewListener listener;
     private final Map<Integer, Boolean> columnVisibility;
 
-    public ReceiverManager(ViewManager viewManager, LogView.LogViewListener listener,
+    public ReceiverManager(ViewManager viewManager, LogViewListener listener,
             Map<Integer, Boolean> columnVisibility) {
         this.viewManager = viewManager;
         this.listener = listener;
