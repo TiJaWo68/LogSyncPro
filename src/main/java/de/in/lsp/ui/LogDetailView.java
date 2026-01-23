@@ -34,12 +34,10 @@ public class LogDetailView extends JPanel {
     private final JTextField threadField;
     private final JTextField loggerField;
     private final JTextField sourceField;
-    private final Runnable onClose;
 
     private static final DateTimeFormatter DNF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     public LogDetailView(Runnable onClose) {
-        this.onClose = onClose;
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
