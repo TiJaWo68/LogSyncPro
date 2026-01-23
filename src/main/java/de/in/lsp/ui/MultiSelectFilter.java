@@ -4,9 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.BoxLayout;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
@@ -160,35 +156,6 @@ public class MultiSelectFilter extends JPanel {
             button.setText(title + " (" + selectedOptions.size() + ")");
             button.setIcon(new FilterIcon(Color.GRAY));
             button.setForeground(UIManager.getColor("Label.foreground"));
-        }
-    }
-
-    private static class FilterIcon implements Icon {
-        private final Color color;
-
-        FilterIcon(Color color) {
-            this.color = color;
-        }
-
-        @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(color);
-            int[] px = { x + 2, x + 10, x + 10, x + 6, x + 6, x + 2 };
-            int[] py = { y + 2, y + 2, y + 6, y + 10, y + 6, y + 6 };
-            g2.fillPolygon(px, py, 6);
-            g2.dispose();
-        }
-
-        @Override
-        public int getIconWidth() {
-            return 12;
-        }
-
-        @Override
-        public int getIconHeight() {
-            return 12;
         }
     }
 
