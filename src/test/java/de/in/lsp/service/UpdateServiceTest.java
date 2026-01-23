@@ -10,6 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import de.in.updraft.UpdateChannel;
 
+/**
+ * Test for UpdateService version handling.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
+ */
 public class UpdateServiceTest {
 
     private String originalProperty;
