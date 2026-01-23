@@ -92,13 +92,18 @@ public class ZebraTableRenderer extends DefaultTableCellRenderer {
     private Color getColorForSource(String source) {
         if (source == null)
             return Color.GRAY;
-        int hash = source.hashCode();
-        return new Color(
-                (hash & 0xFF0000) >> 16,
-                (hash & 0x00FF00) >> 8,
-                (hash & 0x0000FF),
-                180 // Alpha for transparency
-        );
+
+        // Spread the hash to avoid similar colors for similar strings
+        // This is a simple Murmur-like mixing function
+        long hash = (long) source.hashCode() & 0xFFFFFFFFL;
+        hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
+        hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
+        hash = (hash >>> 16) ^ hash;
+
+        float hue = (float) (hash % 360) / 360.0f;
+        // Use consistent saturation and brightness for a professional look
+        // 0.6f saturation and 0.8f brightness give soft but distinct colors
+        return Color.getHSBColor(hue, 0.6f, 0.8f);
     }
 
     private static class ColorBlockIcon implements Icon {
