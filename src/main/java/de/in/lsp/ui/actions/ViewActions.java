@@ -12,8 +12,10 @@ import javax.swing.JOptionPane;
 
 import de.in.lsp.model.LogEntry;
 import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.LogViewListener;
 import de.in.lsp.ui.SearchDialog;
 import de.in.lsp.ui.ViewManager;
+import de.in.lsp.ui.ViewType;
 import de.in.lsp.util.LspLogger;
 
 /**
@@ -32,7 +34,7 @@ public class ViewActions {
         this.viewManager = viewManager;
     }
 
-    public void mergeLogs(LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
+    public void mergeLogs(LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
         List<LogView> selectedViews = viewManager.getLogViews().stream().filter(LogView::isViewSelected).toList();
         if (selectedViews.isEmpty()) {
             JOptionPane.showMessageDialog(parentFrame, "No log views selected.");
@@ -56,7 +58,7 @@ public class ViewActions {
         }
         Collections.sort(allEntries);
         LspLogger.info("Merged " + selectedViews.size() + " views into a new view.");
-        viewManager.addLogView(allEntries, "Merged View", columnVisibility, listener, LogView.ViewType.MERGED);
+        viewManager.addLogView(allEntries, "Merged View", columnVisibility, listener, ViewType.MERGED);
     }
 
     public void closeSelectedViews() {
