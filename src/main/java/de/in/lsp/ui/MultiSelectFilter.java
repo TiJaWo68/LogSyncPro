@@ -28,7 +28,8 @@ import javax.swing.UIManager;
 public class MultiSelectFilter extends JPanel {
     private final String title;
     private final Consumer<Set<String>> onSelectionChanged;
-    private final Set<String> allOptions = new HashSet<>();
+    private final Set<String> domainOptions = new HashSet<>(); // All options ever seen
+    private final Set<String> availableOptions = new HashSet<>(); // Options currently visible
     private final Set<String> selectedOptions = new HashSet<>();
     private final JButton button;
     private JPopupMenu popup;
@@ -50,42 +51,34 @@ public class MultiSelectFilter extends JPanel {
     }
 
     public void setOptions(Set<String> options) {
-        if (options.equals(allOptions))
+        if (options.equals(availableOptions))
             return;
 
-        boolean wasAllSelected = selectedOptions.containsAll(allOptions) && !allOptions.isEmpty();
+        boolean wasAllSelected = selectedOptions.containsAll(domainOptions) && !domainOptions.isEmpty();
         boolean selectionChanged = false;
 
-        // Keep track of what was selected if it still exists
-        Set<String> oldSelected = new HashSet<>(selectedOptions);
-        allOptions.clear();
-        allOptions.addAll(options);
-        selectedOptions.clear();
+        // Add to domain
+        domainOptions.addAll(options);
 
-        for (String opt : allOptions) {
-            if (oldSelected.contains(opt)) {
-                selectedOptions.add(opt);
-            } else if (wasAllSelected) {
-                // If "Select All" was active, automatically select new options
-                selectedOptions.add(opt);
-                selectionChanged = true;
-            }
-        }
+        // Update available
+        availableOptions.clear();
+        availableOptions.addAll(options);
 
-        // Check if any old options were removed that were part of selection
-        if (!selectionChanged) {
-            for (String opt : oldSelected) {
-                if (!allOptions.contains(opt)) {
+        if (wasAllSelected) {
+            // Automatically select new options if we were in "Select All" state
+            for (String opt : options) {
+                if (selectedOptions.add(opt)) {
                     selectionChanged = true;
-                    break;
                 }
             }
+        } else {
+            // Remove selected options that are no longer in the domain (rarely happens)
+            selectionChanged = selectedOptions.retainAll(domainOptions);
         }
 
-        // If nothing was selected before or new options appeared,
-        // we might want to default to "all selected" for new components
-        if (oldSelected.isEmpty() && !allOptions.isEmpty()) {
-            selectedOptions.addAll(allOptions);
+        // Default to "all selected" for new components
+        if (selectedOptions.isEmpty() && !domainOptions.isEmpty()) {
+            selectedOptions.addAll(domainOptions);
             selectionChanged = true;
         }
 
@@ -100,13 +93,13 @@ public class MultiSelectFilter extends JPanel {
         popup = new JPopupMenu();
         popup.setLayout(new BoxLayout(popup, BoxLayout.Y_AXIS));
 
-        if (allOptions.isEmpty()) {
+        if (domainOptions.isEmpty()) {
             popup.add(new JMenuItem("No options available"));
         } else {
-            JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.size() == allOptions.size());
+            JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.size() == domainOptions.size());
             selectAll.addActionListener(e -> {
                 if (selectAll.isSelected()) {
-                    selectedOptions.addAll(allOptions);
+                    selectedOptions.addAll(domainOptions);
                 } else {
                     selectedOptions.clear();
                 }
@@ -117,18 +110,23 @@ public class MultiSelectFilter extends JPanel {
             popup.add(selectAll);
             popup.addSeparator();
 
-            List<String> sortedOptions = new ArrayList<>(allOptions);
+            List<String> sortedOptions = new ArrayList<>(domainOptions);
             java.util.Collections.sort(sortedOptions);
 
             for (String option : sortedOptions) {
+                boolean isAvailable = availableOptions.contains(option);
                 JCheckBox cb = new JCheckBox(option, selectedOptions.contains(option));
+                if (!isAvailable) {
+                    cb.setForeground(Color.GRAY);
+                    cb.setFont(cb.getFont().deriveFont(Font.ITALIC));
+                }
                 cb.addActionListener(e -> {
                     if (cb.isSelected()) {
                         selectedOptions.add(option);
                     } else {
                         selectedOptions.remove(option);
                     }
-                    selectAll.setSelected(selectedOptions.size() == allOptions.size());
+                    selectAll.setSelected(selectedOptions.size() == domainOptions.size());
                     onSelectionChanged.accept(new HashSet<>(selectedOptions));
                     updateButtonText();
                 });
@@ -148,7 +146,7 @@ public class MultiSelectFilter extends JPanel {
     }
 
     private void updateButtonText() {
-        if (selectedOptions.size() == allOptions.size() || selectedOptions.isEmpty()) {
+        if (!isActive()) {
             button.setText(title);
             button.setIcon(null);
             button.setForeground(UIManager.getColor("Label.foreground"));
@@ -164,7 +162,7 @@ public class MultiSelectFilter extends JPanel {
     }
 
     public boolean isActive() {
-        return !selectedOptions.isEmpty() && selectedOptions.size() < allOptions.size();
+        return !selectedOptions.isEmpty() && selectedOptions.size() < domainOptions.size();
     }
 
     public String getTitle() {
@@ -172,13 +170,9 @@ public class MultiSelectFilter extends JPanel {
     }
 
     public Set<String> getAllOptions() {
-        return new HashSet<>(allOptions);
+        return new HashSet<>(domainOptions);
     }
 
-    /**
-     * Programmatically sets the selection and triggers the callback.
-     * Useful for testing.
-     */
     public void setSelectedOptions(Set<String> options) {
         this.selectedOptions.clear();
         this.selectedOptions.addAll(options);
