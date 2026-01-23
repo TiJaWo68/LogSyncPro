@@ -1,11 +1,16 @@
 package de.in.lsp.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
-import de.in.lsp.model.LogEntry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import de.in.lsp.model.LogEntry;
 
 /**
  * Tests for the Diagnost Services log format parsing.
