@@ -96,7 +96,7 @@ public class MultiSelectFilter extends JPanel {
 
     private void showPopup() {
         popup = new JPopupMenu();
-        popup.setLayout(new BoxLayout(popup, BoxLayout.Y_AXIS));
+        popup.setLayout(new BorderLayout());
 
         // In showAllMode, we show domainOptions. Otherwise, we show availableOptions.
         Set<String> optionsToShow = showAllMode ? domainOptions : availableOptions;
@@ -104,6 +104,10 @@ public class MultiSelectFilter extends JPanel {
         if (optionsToShow.isEmpty()) {
             popup.add(new JMenuItem("No options available"));
         } else {
+            JPanel contentPanel = new JPanel();
+            contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+            contentPanel.setOpaque(false);
+
             // "Select All" always refers to the FULL DOMAIN to act as a proper reset
             JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.containsAll(domainOptions));
             selectAll.addActionListener(e -> {
@@ -116,8 +120,12 @@ public class MultiSelectFilter extends JPanel {
                 onSelectionChanged.accept(new HashSet<>(selectedOptions));
                 updateButtonText();
             });
-            popup.add(selectAll);
-            popup.addSeparator();
+            contentPanel.add(selectAll);
+
+            // Separator
+            javax.swing.JSeparator sep = new javax.swing.JSeparator();
+            sep.setMaximumSize(new java.awt.Dimension(Short.MAX_VALUE, 2));
+            contentPanel.add(sep);
 
             List<String> sortedOptions = new ArrayList<>(optionsToShow);
             java.util.Collections.sort(sortedOptions);
@@ -142,17 +150,35 @@ public class MultiSelectFilter extends JPanel {
                     onSelectionChanged.accept(new HashSet<>(selectedOptions));
                     updateButtonText();
                 });
-                popup.add(cb);
+                contentPanel.add(cb);
             }
+
+            javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(contentPanel);
+            scrollPane.setBorder(null);
+            scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+            // Limit height if too many items
+            if (optionsToShow.size() > 10) {
+                scrollPane.setPreferredSize(new java.awt.Dimension(200, 300));
+            }
+
+            popup.add(scrollPane, BorderLayout.CENTER);
         }
 
         popup.show(button, 0, button.getHeight());
     }
 
     private void refreshCheckboxes() {
-        for (Component c : popup.getComponents()) {
-            if (c instanceof JCheckBox cb && !cb.getText().equals("Select All")) {
-                cb.setSelected(selectedOptions.contains(cb.getText()));
+        if (popup == null || popup.getComponentCount() == 0)
+            return;
+
+        Component comp = popup.getComponent(0);
+        if (comp instanceof javax.swing.JScrollPane scrollPane) {
+            JPanel viewportOnly = (JPanel) scrollPane.getViewport().getView();
+            for (Component c : viewportOnly.getComponents()) {
+                if (c instanceof JCheckBox cb && !cb.getText().equals("Select All")) {
+                    cb.setSelected(selectedOptions.contains(cb.getText()));
+                }
             }
         }
     }
