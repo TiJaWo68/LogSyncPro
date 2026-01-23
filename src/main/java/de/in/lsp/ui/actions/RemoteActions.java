@@ -23,8 +23,9 @@ import de.in.lsp.manager.LogManager;
 import de.in.lsp.model.LogEntry;
 import de.in.lsp.service.SshK8sService;
 import de.in.lsp.ui.K8sPodSelectionDialog;
-import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.LogViewListener;
 import de.in.lsp.ui.ViewManager;
+import de.in.lsp.ui.ViewType;
 import de.in.lsp.util.LspLogger;
 
 /**
@@ -53,7 +54,7 @@ public class RemoteActions {
         }
     }
 
-    public void importFromK8s(LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
+    public void importFromK8s(LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
         Composite panel = new Composite();
         JTextField hostField = new JTextField(getLastHostname(), 20);
         JTextField userField = new JTextField("node-admin", 20);
@@ -74,7 +75,7 @@ public class RemoteActions {
                 listener, columnVisibility);
     }
 
-    public void importFromK8sAutomated(String credentials, String fetchFilter, LogView.LogViewListener listener,
+    public void importFromK8sAutomated(String credentials, String fetchFilter, LogViewListener listener,
             Map<Integer, Boolean> columnVisibility) {
         String host = "";
         String user = "node-admin";
@@ -104,7 +105,7 @@ public class RemoteActions {
     }
 
     private void showSshDialog(String host, String user, String password, String fetchFilter,
-            LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
+            LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
         Composite panel = new Composite();
         JTextField hostField = new JTextField(host.isEmpty() ? getLastHostname() : host, 30);
         JTextField userField = new JTextField(user, 30);
@@ -126,7 +127,7 @@ public class RemoteActions {
     }
 
     private void performSshDiscovery(String host, int port, String user, String password, String fetchFilter,
-            LogView.LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
+            LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
         saveLastHostname(host);
         ProgressMonitor pm = new ProgressMonitor(parentFrame, "Connecting and discovering pods...", "", 0, 100);
         new Thread(() -> {
@@ -165,7 +166,7 @@ public class RemoteActions {
                         LspLogger.info("Finished streaming " + entries.size() + " entries from " + target.pod);
                         SwingUtilities.invokeLater(() -> {
                             viewManager.addLogView(entries, sourceName, columnVisibility, listener,
-                                    LogView.ViewType.K8S);
+                                    ViewType.K8S);
                         });
                     } catch (Exception ex) {
                         LspLogger.error("Error streaming logs from " + target.pod, ex);
