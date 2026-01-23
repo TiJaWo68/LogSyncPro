@@ -104,7 +104,10 @@ public class MultiSelectFilter extends JPanel {
         // "Select All" always refers to the FULL DOMAIN to act as a proper reset
         JCheckBox selectAll = new JCheckBox("Select All", selectedOptions.containsAll(domainOptions));
         selectAll.addActionListener(e -> {
-            if (selectAll.isSelected()) {
+            boolean selected = selectAll.isSelected();
+            // User requirement: "Select All as Reset".
+            // Select All selects EVERYTHING.
+            if (selected) {
                 selectedOptions.addAll(domainOptions);
             } else {
                 selectedOptions.clear();
@@ -115,28 +118,27 @@ public class MultiSelectFilter extends JPanel {
         });
         headerPanel.add(selectAll, BorderLayout.CENTER);
 
-        // Toggle button for showing all options
-        javax.swing.JToggleButton toggleBtn = new javax.swing.JToggleButton(IconFactory.getShowAllIcon());
-        toggleBtn.setToolTipText("Toggle: Show filtered options / Show all options");
-        toggleBtn.setSelected(showAllMode);
-        toggleBtn.setFocusable(false);
-        toggleBtn.setBorderPainted(false);
-        toggleBtn.setContentAreaFilled(false);
-        // Ensure popup doesn't close on click
-        toggleBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+        // "Show All" CheckBox for switching mode
+        JCheckBox showAllCb = new JCheckBox("Show all");
+        showAllCb.setToolTipText("Switch between showing matched options only and showing all options");
+        showAllCb.setSelected(showAllMode);
+        showAllCb.setFocusable(false);
+        // Ensure popup doesn't close on click, similar to JMenu item handling but for
+        // custom component
+        showAllCb.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                e.consume(); // Prevent popup hidden
-                showAllMode = !showAllMode;
-                toggleBtn.setSelected(showAllMode);
-                rebuildPopupList();
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+                // consume to prevent auto-close if triggered by parent
             }
         });
-        headerPanel.add(toggleBtn, BorderLayout.EAST);
+        showAllCb.addActionListener(e -> {
+            showAllMode = showAllCb.isSelected();
+            rebuildPopupList();
+        });
+        headerPanel.add(showAllCb, BorderLayout.EAST);
 
         popup.add(headerPanel, BorderLayout.NORTH);
-        popup.add(new javax.swing.JSeparator(), BorderLayout.CENTER); // Placeholder, mostly ignored due to BorderLayout
-                                                                      // rules but ensures separation
+        popup.add(new javax.swing.JSeparator(), BorderLayout.CENTER); // Placeholder
 
         // Content placeholder
         rebuildPopupList();
@@ -145,16 +147,10 @@ public class MultiSelectFilter extends JPanel {
     }
 
     private void rebuildPopupList() {
-        // Remove existing scrollpane or "No options" label (added at CENTER)
-        // We iterate and remove components that are NOT the header (NORTH)
+        // Remove existing center component (content or no-options label)
         for (Component c : popup.getComponents()) {
-            // Header is at NORTH, we want to replace CENTER
-            // BorderLayout layout manager checks constraints, but we can just check
-            // reference if we kept it.
-            // Simpler: Remove everything except header. But JPopupMenu structure is flat.
-            // Let's rely on type or non-header.
+            // Header is at NORTH, separators/content at CENTER
             if (c instanceof JPanel && ((JPanel) c).getLayout() instanceof BorderLayout) {
-                // This is likely our header panel
                 continue;
             }
             popup.remove(c);
@@ -188,10 +184,7 @@ public class MultiSelectFilter extends JPanel {
                     } else {
                         selectedOptions.remove(option);
                     }
-
-                    // Update Select All state in header
                     updateSelectAllState();
-
                     onSelectionChanged.accept(new HashSet<>(selectedOptions));
                     updateButtonText();
                 });
@@ -202,19 +195,38 @@ public class MultiSelectFilter extends JPanel {
             scrollPane.setBorder(null);
             scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-            // Limit height if too many items
-            if (optionsToShow.size() > 10) {
-                scrollPane.setPreferredSize(new java.awt.Dimension(Math.max(200, button.getWidth()), 300));
-            } else {
-                // Ensure min width
-                scrollPane.setPreferredSize(
-                        new java.awt.Dimension(Math.max(200, button.getWidth()), scrollPane.getPreferredSize().height));
+            // Calculate proper height: numItems * RowHeight (approx 25px)
+            // Limit to ScreenHeight * 0.6 or 600px
+            int rowHeight = 25;
+            int totalHeight = optionsToShow.size() * rowHeight;
+            int maxHeight = 600; // Increased max height
+            try {
+                // Try to get screen height if graphic environment is available
+                maxHeight = java.awt.Toolkit.getDefaultToolkit().getScreenSize().height * 2 / 3;
+            } catch (Exception e) {
+                // Headless or error
             }
+
+            int prefHeight = Math.min(totalHeight + 10, maxHeight);
+            // Ensure min height for at least a few items if they exist
+            if (optionsToShow.size() > 0)
+                prefHeight = Math.max(prefHeight, 50);
+
+            int width = Math.max(250, button.getWidth()); // Min width 250 for readability
+
+            scrollPane.setPreferredSize(new java.awt.Dimension(width, prefHeight));
 
             popup.add(scrollPane, BorderLayout.CENTER);
         }
+
+        // Force resize of the popup window
         popup.revalidate();
         popup.repaint();
+        // Pack the window to adapt to new size (Show All -> larger list)
+        java.awt.Window w = javax.swing.SwingUtilities.getWindowAncestor(popup);
+        if (w != null) {
+            w.pack();
+        }
     }
 
     private void updateSelectAllState() {
