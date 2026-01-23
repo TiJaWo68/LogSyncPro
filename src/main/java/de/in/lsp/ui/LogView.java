@@ -16,13 +16,10 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JInternalFrame;
-import javax.swing.JPanel;
 import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -48,7 +45,7 @@ public class LogView extends JInternalFrame {
 	private final LogViewListener listener;
 	private LogDetailView detailView;
 	private JSplitPane splitPane;
-	private JScrollPane tableScrollPane;
+	private FilteredTablePanel filteredTablePanel;
 	private boolean maximized = false;
 	private String appName;
 	private String clientIp;
@@ -118,104 +115,33 @@ public class LogView extends JInternalFrame {
 
 		createDetailView();
 
-		// Content Panel (Filter + Table)
-		JPanel contentPanel = new JPanel(new BorderLayout());
+		// Filter + Table Setup
+		filterPanel = new LogViewFilterPanel(table, sorter, entries);
+		filteredTablePanel = new FilteredTablePanel(table, filterPanel);
 
-		columnManager.setupTableColumns();
-
-		// Explicitly set renderer for all columns
-		ZebraTableRenderer renderer = new ZebraTableRenderer();
-		for (int i = 0; i < table.getColumnCount(); i++) {
-			table.getColumnModel().getColumn(i).setCellRenderer(renderer);
-		}
-
-		table.setTableHeader(null);
-		tableScrollPane = new JScrollPane(table);
-
-		JPanel headerContainer = new JPanel(new BorderLayout());
-		headerContainer.setOpaque(false);
-
-		// Sync horizontal scroll
-		tableScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
-		});
-
-		contentPanel.add(headerContainer, BorderLayout.NORTH);
-
-		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tableScrollPane, null);
+		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filteredTablePanel, null);
 		splitPane.setResizeWeight(1.0);
 		splitPane.setOneTouchExpandable(false);
 		splitPane.setBorder(null);
 
-		contentPanel.add(splitPane, BorderLayout.CENTER);
+		add(splitPane, BorderLayout.CENTER);
 
-		// Populate filters
-		filterPanel = new LogViewFilterPanel(table, sorter, entries);
-
-		// Wrap filterPanel in a scroll pane to sync with table horizontal scroll
-		JScrollPane headerScroll = new JScrollPane(filterPanel);
-		headerScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		headerScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-		headerScroll.setBorder(null);
-		headerScroll.setOpaque(false);
-		headerScroll.getViewport().setOpaque(false);
-
-		tableScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
-			headerScroll.getHorizontalScrollBar().setValue(e.getValue());
-		});
-
-		headerContainer.add(headerScroll, BorderLayout.CENTER);
-
-		tableScrollPane.addComponentListener(new ComponentAdapter() {
+		filteredTablePanel.getTableScrollPane().addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
 				adjustMessageColumnWidth();
-				if (filterPanel != null) {
-					filterPanel.updateAlignment();
-				}
-			}
-		});
-
-		table.getColumnModel().addColumnModelListener(new javax.swing.event.TableColumnModelListener() {
-			@Override
-			public void columnAdded(javax.swing.event.TableColumnModelEvent e) {
-				if (filterPanel != null)
-					filterPanel.updateAlignment();
-			}
-
-			@Override
-			public void columnRemoved(javax.swing.event.TableColumnModelEvent e) {
-				if (filterPanel != null)
-					filterPanel.updateAlignment();
-			}
-
-			@Override
-			public void columnMoved(javax.swing.event.TableColumnModelEvent e) {
-				if (filterPanel != null)
-					filterPanel.updateAlignment();
-			}
-
-			@Override
-			public void columnMarginChanged(javax.swing.event.ChangeEvent e) {
-				if (filterPanel != null)
-					filterPanel.updateAlignment();
-			}
-
-			@Override
-			public void columnSelectionChanged(javax.swing.event.ListSelectionEvent e) {
 			}
 		});
 
 		filterPanel.updateFilters();
 		filterPanel.updateAlignment();
 
-		add(contentPanel, BorderLayout.CENTER);
-
 		setupKeyBindings();
 	}
 
 	private void adjustMessageColumnWidth() {
 		TableColumnModel tcm = table.getColumnModel();
-		int totalWidth = tableScrollPane.getViewport().getWidth();
+		int totalWidth = filteredTablePanel.getTableScrollPane().getViewport().getWidth();
 		if (totalWidth <= 0)
 			return;
 
@@ -336,7 +262,7 @@ public class LogView extends JInternalFrame {
 		final int finalIndex = index;
 		SwingUtilities.invokeLater(() -> {
 			int viewRow = table.convertRowIndexToView(finalIndex);
-			table.setRowSelectionInterval(viewRow, viewRow);
+			table.getSelectionModel().setSelectionInterval(viewRow, viewRow);
 			table.scrollRectToVisible(table.getCellRect(viewRow, 0, true));
 		});
 	}
@@ -447,12 +373,12 @@ public class LogView extends JInternalFrame {
 	}
 
 	private boolean isAtBottom() {
-		JScrollBar sb = tableScrollPane.getVerticalScrollBar();
+		JScrollBar sb = filteredTablePanel.getTableScrollPane().getVerticalScrollBar();
 		return sb.getValue() + sb.getVisibleAmount() >= sb.getMaximum() - 20;
 	}
 
 	private void scrollToBottom() {
-		JScrollBar sb = tableScrollPane.getVerticalScrollBar();
+		JScrollBar sb = filteredTablePanel.getTableScrollPane().getVerticalScrollBar();
 		sb.setValue(sb.getMaximum());
 	}
 
