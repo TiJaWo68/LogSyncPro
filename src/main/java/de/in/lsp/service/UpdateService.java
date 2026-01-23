@@ -1,13 +1,14 @@
 package de.in.lsp.service;
 
-import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 import java.util.prefs.Preferences;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import de.in.lsp.LogSyncPro;
 import de.in.lsp.ui.LspUpdateDialog;
@@ -18,6 +19,8 @@ import de.in.updraft.source.GithubReleaseSource;
 
 /**
  * Service to manage update checks and preferences.
+ * 
+ * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class UpdateService {
     private static final String PREF_NODE = "de.in.lsp.update";
