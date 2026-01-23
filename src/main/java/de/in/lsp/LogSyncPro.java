@@ -7,9 +7,9 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.io.File;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,18 +30,20 @@ import javax.swing.SwingUtilities;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 
+import de.in.lsp.service.UpdateService;
 import de.in.lsp.ui.LogFileTransferHandler;
 import de.in.lsp.ui.LogSyncProMenu;
 import de.in.lsp.ui.LogView;
+import de.in.lsp.ui.LogViewListener;
 import de.in.lsp.ui.MemoryStatusBar;
 import de.in.lsp.ui.ViewManager;
+import de.in.lsp.ui.ViewType;
 import de.in.lsp.ui.actions.FileActions;
 import de.in.lsp.ui.actions.HelpActions;
 import de.in.lsp.ui.actions.RemoteActions;
 import de.in.lsp.ui.actions.ViewActions;
 import de.in.lsp.util.LspLogger;
 import de.in.lsp.util.VersionUtil;
-import de.in.lsp.service.UpdateService;
 
 /**
  * Main application class for LogSyncPro.
@@ -49,7 +51,7 @@ import de.in.lsp.service.UpdateService;
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
-public class LogSyncPro extends JFrame implements LogView.LogViewListener {
+public class LogSyncPro extends JFrame implements LogViewListener {
 
     private ViewManager viewManager;
     private ViewActions viewActions;
@@ -107,7 +109,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
     private void setupInternalLogging() {
         internalLogView = viewManager.addLogView(new ArrayList<>(), "Internal Log", columnVisibility, this,
-                LogView.ViewType.INTERNAL);
+                ViewType.INTERNAL);
         internalLogView.hideColumnPermanently(4); // Hide IP column
         internalLogView.hideColumnPermanently(6); // Hide Source column
         viewManager.minimizeView(internalLogView);
@@ -143,7 +145,7 @@ public class LogSyncPro extends JFrame implements LogView.LogViewListener {
 
         this.appMenu = new LogSyncProMenu(this, viewActions, remoteActions, helpActions, receiverManager, viewManager,
                 columnVisibility, updateService, openLogsAction, exitAction);
-        setJMenuBar(appMenu.createMenuBar());
+        setJMenuBar(appMenu);
     }
 
     private void setupUI() {
