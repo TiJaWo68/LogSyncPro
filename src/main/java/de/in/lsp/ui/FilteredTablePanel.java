@@ -84,6 +84,9 @@ public class FilteredTablePanel extends JPanel {
                 filterPanel.updateAlignment();
             }
         });
+
+        // Initial alignment
+        filterPanel.updateAlignment();
     }
 
     public JTable getTable() {

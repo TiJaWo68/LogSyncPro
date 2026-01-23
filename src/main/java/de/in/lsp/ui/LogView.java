@@ -116,6 +116,14 @@ public class LogView extends JInternalFrame {
 		createDetailView();
 
 		// Filter + Table Setup
+		columnManager.setupTableColumns();
+
+		// Explicitly set renderer for all columns
+		ZebraTableRenderer renderer = new ZebraTableRenderer();
+		for (int i = 0; i < table.getColumnCount(); i++) {
+			table.getColumnModel().getColumn(i).setCellRenderer(renderer);
+		}
+
 		filterPanel = new LogViewFilterPanel(table, sorter, entries);
 		filteredTablePanel = new FilteredTablePanel(table, filterPanel);
 
