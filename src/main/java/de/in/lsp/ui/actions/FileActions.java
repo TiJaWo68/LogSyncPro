@@ -14,32 +14,30 @@ import de.in.lsp.ui.ViewType;
 import de.in.lsp.util.LspLogger;
 
 /**
- * Handles file-related actions like loading logs from disk.
- * Connects the UI to the LogFileService for background processing.
+ * Handles file-related actions like loading logs from disk. Connects the UI to the LogFileService for background processing.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class FileActions {
-    private final ViewManager viewManager;
-    private final LogFileService logFileService = new LogFileService();
+	private final ViewManager viewManager;
+	private final LogFileService logFileService = new LogFileService();
 
-    public FileActions(ViewManager viewManager) {
-        this.viewManager = viewManager;
-    }
+	public FileActions(ViewManager viewManager) {
+		this.viewManager = viewManager;
+	}
 
-    public void backgroundLoadFiles(List<File> files, Consumer<String> statusConsumer,
-            LogViewListener listener, Map<Integer, Boolean> columnVisibility) {
-        LspLogger.info("Starting background loading of " + files.size() + " files.");
-        logFileService.backgroundLoadFiles(files, statusConsumer, (appName, group) -> {
-            String title = appName;
-            if (group.getFileCount() > 1) {
-                title += " (Auto-Merged)";
-            }
-            final String finalTitle = title;
-            LspLogger.info("Loaded application '" + appName + "' with " + group.getEntries().size() + " entries.");
-            SwingUtilities.invokeLater(
-                    () -> viewManager.addLogView(group.getEntries(), finalTitle, columnVisibility, listener,
-                            ViewType.FILE));
-        });
-    }
+	public void backgroundLoadFiles(List<File> files, Consumer<String> statusConsumer, LogViewListener listener,
+			Map<Integer, Boolean> columnVisibility) {
+		LspLogger.info("Starting background loading of " + files.size() + " files.");
+		logFileService.backgroundLoadFiles(files, statusConsumer, (appName, group) -> {
+			String title = appName;
+			if (group.getFileCount() > 1) {
+				title += " (Auto-Merged)";
+			}
+			final String finalTitle = title;
+			LspLogger.info("Loaded application '" + appName + "' with " + group.getEntries().size() + " entries.");
+			SwingUtilities
+					.invokeLater(() -> viewManager.addLogView(group.getEntries(), finalTitle, columnVisibility, listener, ViewType.FILE));
+		});
+	}
 }

@@ -7,66 +7,63 @@ import javax.swing.table.AbstractTableModel;
 import de.in.lsp.model.LogEntry;
 
 /**
- * Custom table model for displaying list of LogEntry objects.
- * Maps entry fields to table columns: Timestamp, Level, Message, and Source.
+ * Custom table model for displaying list of LogEntry objects. Maps entry fields to table columns: Timestamp, Level, Message, and Source.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class LogTableModel extends AbstractTableModel {
-    private final List<LogEntry> entries;
-    private final String[] columns = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
+	private final List<LogEntry> entries;
 
-    public LogTableModel(List<LogEntry> entries) {
-        this.entries = entries;
-    }
+	public LogTableModel(List<LogEntry> entries) {
+		this.entries = entries;
+	}
 
-    @Override
-    public int getRowCount() {
-        return entries.size();
-    }
+	@Override
+	public int getRowCount() {
+		return entries.size();
+	}
 
-    @Override
-    public int getColumnCount() {
-        return columns.length;
-    }
+	@Override
+	public int getColumnCount() {
+		return LogColumn.values().length;
+	}
 
-    @Override
-    public String getColumnName(int column) {
-        return columns[column];
-    }
+	@Override
+	public String getColumnName(int column) {
+		return LogColumn.values()[column].getHeader();
+	}
 
-    @Override
-    public Object getValueAt(int rowIndex, int columnIndex) {
-        LogEntry entry = entries.get(rowIndex);
-        return switch (columnIndex) {
-            case 0 -> entry.getFormattedTimestamp();
-            case 1 -> entry.level();
-            case 2 -> entry.getSimpleThreadName();
-            case 3 -> entry.getSimpleLoggerName();
-            case 4 -> entry.ip();
-            case 5 -> entry.message();
-            case 6 -> entry.sourceFile();
-            default -> null;
-        };
-    }
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex) {
+		LogEntry entry = entries.get(rowIndex);
+		LogColumn col = LogColumn.fromIndex(columnIndex);
+		if (col == null)
+			return null;
+		return switch (col) {
+		case TIMESTAMP -> entry.getFormattedTimestamp();
+		case LEVEL -> entry.level();
+		case THREAD -> entry.getSimpleThreadName();
+		case LOGGER -> entry.getSimpleLoggerName();
+		case IP -> entry.ip();
+		case MESSAGE -> entry.message();
+		case SOURCE -> entry.sourceFile();
+		};
+	}
 
-    public LogEntry getEntry(int rowIndex) {
-        return entries.get(rowIndex);
-    }
+	public LogEntry getEntry(int rowIndex) {
+		return entries.get(rowIndex);
+	}
 
-    public List<LogEntry> getEntries() {
-        return entries;
-    }
+	public List<LogEntry> getEntries() {
+		return entries;
+	}
 
-    public void addEntry(LogEntry entry) {
-        int row = entries.size() - 1;
-        fireTableRowsInserted(row, row);
-    }
+	public void addEntry(LogEntry entry) {
+		int row = entries.size() - 1;
+		fireTableRowsInserted(row, row);
+	}
 
-    public int getUniqueSourceCount() {
-        return (int) entries.stream()
-                .map(LogEntry::sourceFile)
-                .distinct()
-                .count();
-    }
+	public int getUniqueSourceCount() {
+		return (int) entries.stream().map(LogEntry::sourceFile).distinct().count();
+	}
 }

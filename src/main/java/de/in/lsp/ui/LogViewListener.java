@@ -6,15 +6,15 @@ package de.in.lsp.ui;
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public interface LogViewListener {
-    void onClose(LogView view);
+	void onClose(LogView view);
 
-    void onMinimize(LogView view);
+	void onMinimize(LogView view);
 
-    void onMaximize(LogView view);
+	void onMaximize(LogView view);
 
-    void onFocusGained(LogView view);
+	void onFocusGained(LogView view);
 
-    void onIncreaseFontSize();
+	void onIncreaseFontSize();
 
-    void onDecreaseFontSize();
+	void onDecreaseFontSize();
 }

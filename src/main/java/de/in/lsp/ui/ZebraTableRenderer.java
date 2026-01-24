@@ -11,125 +11,122 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 
 /**
- * Custom JTable cell renderer that implements a zebra-striped design
- * to improve row readability in large log tables.
+ * Custom JTable cell renderer that implements a zebra-striped design to improve row readability in large log tables.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
 public class ZebraTableRenderer extends DefaultTableCellRenderer {
 
-    private static final Color WARN_COLOR = new Color(255, 255, 200); // Light Yellow
-    private static final Color ERROR_COLOR = new Color(255, 200, 200); // Light Red
+	private static final Color WARN_COLOR = new Color(255, 255, 200); // Light Yellow
+	private static final Color ERROR_COLOR = new Color(255, 200, 200); // Light Red
 
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value,
-            boolean isSelected, boolean hasFocus, int row, int column) {
+	@Override
+	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        JLabel label = (JLabel) c;
-        label.setIcon(null);
-        label.setToolTipText(null);
+		Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		JLabel label = (JLabel) c;
+		label.setIcon(null);
+		label.setToolTipText(null);
 
-        int modelColumn = table.convertColumnIndexToModel(column);
+		int modelColumn = table.convertColumnIndexToModel(column);
 
-        if (!isSelected) {
-            // Level-specific background and foreground
-            if (modelColumn == 1) { // Level column
-                String level = String.valueOf(value).toUpperCase();
-                if (level.contains("WARN")) {
-                    c.setBackground(WARN_COLOR);
-                    c.setForeground(Color.BLACK);
-                } else if (level.contains("ERROR") || level.contains("FATAL")) {
-                    c.setBackground(ERROR_COLOR);
-                    c.setForeground(Color.BLACK);
-                } else {
-                    applyZebraBackground(table, c, row);
-                    c.setForeground(table.getForeground());
-                }
-            } else {
-                applyZebraBackground(table, c, row);
-                c.setForeground(table.getForeground());
-            }
-        }
+		if (!isSelected) {
+			// Level-specific background and foreground
+			if (modelColumn == 1) { // Level column
+				String level = String.valueOf(value).toUpperCase();
+				if (level.contains("WARN")) {
+					c.setBackground(WARN_COLOR);
+					c.setForeground(Color.BLACK);
+				} else if (level.contains("ERROR") || level.contains("FATAL")) {
+					c.setBackground(ERROR_COLOR);
+					c.setForeground(Color.BLACK);
+				} else {
+					applyZebraBackground(table, c, row);
+					c.setForeground(table.getForeground());
+				}
+			} else {
+				applyZebraBackground(table, c, row);
+				c.setForeground(table.getForeground());
+			}
+		}
 
-        // Source column special rendering (Icon or empty)
-        if (modelColumn == 6) { // Source
-            String source = String.valueOf(value);
-            label.setText(""); // Always clear text to prevent "letters"
-            label.setToolTipText(source);
+		// Source column special rendering (Icon or empty)
+		if (modelColumn == 6) { // Source
+			String source = String.valueOf(value);
+			label.setText(""); // Always clear text to prevent "letters"
+			label.setToolTipText(source);
 
-            // Use icons for source to keep it narrow (24px)
-            if (table.getModel() instanceof LogTableModel ltm && ltm.getUniqueSourceCount() > 1) {
-                label.setIcon(new ColorBlockIcon(getColorForSource(source)));
-            } else {
-                label.setIcon(null);
-            }
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-        } else {
-            label.setHorizontalAlignment(SwingConstants.LEADING);
-        }
+			// Use icons for source to keep it narrow (24px)
+			if (table.getModel() instanceof LogTableModel ltm && ltm.getUniqueSourceCount() > 1) {
+				label.setIcon(new ColorBlockIcon(getColorForSource(source)));
+			} else {
+				label.setIcon(null);
+			}
+			label.setHorizontalAlignment(SwingConstants.CENTER);
+		} else {
+			label.setHorizontalAlignment(SwingConstants.LEADING);
+		}
 
-        // Hide "UNKNOWN" placeholder values
-        if ("UNKNOWN".equals(String.valueOf(value))) {
-            label.setText("");
-        }
+		// Hide "UNKNOWN" placeholder values
+		if ("UNKNOWN".equals(String.valueOf(value))) {
+			label.setText("");
+		}
 
-        return c;
-    }
+		return c;
+	}
 
-    private void applyZebraBackground(JTable table, Component c, int row) {
-        if (row % 2 == 0) {
-            c.setBackground(table.getBackground());
-        } else {
-            Color bg = table.getBackground();
-            int r = Math.max(0, bg.getRed() - 10);
-            int g = Math.max(0, bg.getGreen() - 10);
-            int b = Math.max(0, bg.getBlue() - 10);
-            c.setBackground(new Color(r, g, b));
-        }
-    }
+	private void applyZebraBackground(JTable table, Component c, int row) {
+		if (row % 2 == 0) {
+			c.setBackground(table.getBackground());
+		} else {
+			Color bg = table.getBackground();
+			int r = Math.max(0, bg.getRed() - 10);
+			int g = Math.max(0, bg.getGreen() - 10);
+			int b = Math.max(0, bg.getBlue() - 10);
+			c.setBackground(new Color(r, g, b));
+		}
+	}
 
-    private Color getColorForSource(String source) {
-        if (source == null)
-            return Color.GRAY;
+	private Color getColorForSource(String source) {
+		if (source == null)
+			return Color.GRAY;
 
-        // Spread the hash to avoid similar colors for similar strings
-        // This is a simple Murmur-like mixing function
-        long hash = (long) source.hashCode() & 0xFFFFFFFFL;
-        hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
-        hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
-        hash = (hash >>> 16) ^ hash;
+		// Spread the hash to avoid similar colors for similar strings This is a simple Murmur-like mixing function
+		long hash = (long) source.hashCode() & 0xFFFFFFFFL;
+		hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
+		hash = ((hash >>> 16) ^ hash) * 0x45d9f3bL;
+		hash = (hash >>> 16) ^ hash;
 
-        float hue = (float) (hash % 360) / 360.0f;
-        // Use consistent saturation and brightness for a professional look
-        // 0.6f saturation and 0.8f brightness give soft but distinct colors
-        return Color.getHSBColor(hue, 0.6f, 0.8f);
-    }
+		float hue = (float) (hash % 360) / 360.0f;
+		// Use consistent saturation and brightness for a professional look 0.6f saturation and 0.8f brightness give soft but distinct
+		// colors
+		return Color.getHSBColor(hue, 0.6f, 0.8f);
+	}
 
-    private static class ColorBlockIcon implements Icon {
-        private final Color color;
+	private static class ColorBlockIcon implements Icon {
+		private final Color color;
 
-        public ColorBlockIcon(Color color) {
-            this.color = color;
-        }
+		public ColorBlockIcon(Color color) {
+			this.color = color;
+		}
 
-        @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            g.setColor(color);
-            g.fillRect(x + 2, y + 2, getIconWidth() - 4, getIconHeight() - 4);
-            g.setColor(color.darker());
-            g.drawRect(x + 2, y + 2, getIconWidth() - 4, getIconHeight() - 4);
-        }
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			g.setColor(color);
+			g.fillRect(x + 2, y + 2, getIconWidth() - 4, getIconHeight() - 4);
+			g.setColor(color.darker());
+			g.drawRect(x + 2, y + 2, getIconWidth() - 4, getIconHeight() - 4);
+		}
 
-        @Override
-        public int getIconWidth() {
-            return 16;
-        }
+		@Override
+		public int getIconWidth() {
+			return 16;
+		}
 
-        @Override
-        public int getIconHeight() {
-            return 16;
-        }
-    }
+		@Override
+		public int getIconHeight() {
+			return 16;
+		}
+	}
 
 }

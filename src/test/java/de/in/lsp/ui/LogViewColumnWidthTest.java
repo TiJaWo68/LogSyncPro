@@ -30,9 +30,7 @@ public class LogViewColumnWidthTest {
 			// 1. Setup Data with long content
 			List<LogEntry> entries = new ArrayList<>();
 			entries.add(new LogEntry(LocalDateTime.now(), "INFO", "main-thread-is-very-long-and-might-be-truncated",
-					"com.example.very.long.package.name.that.might.cause.issues.LoggerClass", "192.168.100.200", // Somewhat
-																													// long
-																													// IP
+					"com.example.very.long.package.name.that.might.cause.issues.LoggerClass", "192.168.100.200", // Somewhat long IP
 					"This is a sample message", "source.log", null));
 
 			// 2. Create LogView
@@ -72,10 +70,8 @@ public class LogViewColumnWidthTest {
 			// 4. Verify Truncation Check specific columns that are likely to be truncated
 			checkTruncation(table, fm, 0, entries.get(0).getFormattedTimestamp()); // Timestamp
 			checkTruncation(table, fm, 1, entries.get(0).level()); // Level
-			// checkTruncation(table, fm, 2, entries.get(0).thread()); // Thread - Heuristic
-			// sizing, may be truncated checkTruncation(table,
-			// fm, 3, entries.get(0).loggerName()); // Logger - Heuristic sizing, may be
-			// truncated
+			// checkTruncation(table, fm, 2, entries.get(0).thread()); // Thread - Heuristic sizing, may be truncated checkTruncation(table,
+			// fm, 3, entries.get(0).loggerName()); // Logger - Heuristic sizing, may be truncated
 			checkTruncation(table, fm, 4, entries.get(0).ip()); // IP
 		});
 	}
@@ -93,9 +89,8 @@ public class LogViewColumnWidthTest {
 		int requiredWidth = contentWidth + 4;
 
 		if (colWidth < requiredWidth) {
-			System.out.println(
-					"Truncation detected in column " + modelIndex + ": Content Width=" + requiredWidth + ", Col Width="
-							+ colWidth + ", Content='" + content + "'");
+			System.out.println("Truncation detected in column " + modelIndex + ": Content Width=" + requiredWidth + ", Col Width="
+					+ colWidth + ", Content='" + content + "'");
 			// Fail the test to confirm the issue as requested
 			fail("Column " + modelIndex + " is truncated. Required: " + requiredWidth + ", Actual: " + colWidth);
 		}

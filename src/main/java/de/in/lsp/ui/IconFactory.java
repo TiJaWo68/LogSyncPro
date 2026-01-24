@@ -11,33 +11,33 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
  */
 public class IconFactory {
 
-    private static final String SELECTED_ICON_PATH = "icons/selected.svg";
+	private static final String SELECTED_ICON_PATH = "icons/selected.svg";
 
-    /**
-     * Creates an SVG icon with the specified path and size.
-     * 
-     * @param path The path to the SVG resource.
-     * @param size The size (width and height) of the icon.
-     * @return The icon, or null if it cannot be created.
-     */
-    public static Icon getIcon(String path, int size) {
-        try {
-            return new FlatSVGIcon(path, size, size);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+	/**
+	 * Creates an SVG icon with the specified path and size.
+	 * 
+	 * @param path The path to the SVG resource.
+	 * @param size The size (width and height) of the icon.
+	 * @return The icon, or null if it cannot be created.
+	 */
+	public static Icon getIcon(String path, int size) {
+		try {
+			return new FlatSVGIcon(path, size, size);
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
-    /**
-     * Returns the icon used for selected views.
-     * 
-     * @return The selected icon.
-     */
-    public static Icon getSelectedIcon() {
-        return getIcon(SELECTED_ICON_PATH, 16);
-    }
+	/**
+	 * Returns the icon used for selected views.
+	 * 
+	 * @return The selected icon.
+	 */
+	public static Icon getSelectedIcon() {
+		return getIcon(SELECTED_ICON_PATH, 16);
+	}
 
-    public static Icon getShowAllIcon() {
-        return getIcon("icons/show_all.svg", 16);
-    }
+	public static Icon getShowAllIcon() {
+		return getIcon("icons/show_all.svg", 16);
+	}
 }

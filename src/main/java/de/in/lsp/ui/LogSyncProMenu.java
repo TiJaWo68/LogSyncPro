@@ -29,162 +29,160 @@ import de.in.lsp.util.LspLogger;
  */
 public class LogSyncProMenu extends JMenuBar {
 
-    private final ReceiverManager receiverManager;
-    private final ViewManager viewManager;
-    private final Map<Integer, Boolean> columnVisibility;
+	private final ReceiverManager receiverManager;
+	private final ViewManager viewManager;
+	private final Map<Integer, Boolean> columnVisibility;
 
-    private final Map<Integer, JCheckBoxMenuItem> receiverMenuItems = new HashMap<>();
-    private final JMenu logFileMenu;
-    private final JMenuItem mergeItem;
-    private final JMenuItem closeSelectedItem;
+	private final Map<Integer, JCheckBoxMenuItem> receiverMenuItems = new HashMap<>();
+	private final JMenu logFileMenu;
+	private final JMenuItem mergeItem;
+	private final JMenuItem closeSelectedItem;
 
-    private final String[] COLUMN_NAMES = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
+	private final String[] COLUMN_NAMES = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
 
-    public LogSyncProMenu(LogSyncPro mainFrame, ViewActions viewActions, RemoteActions remoteActions,
-            HelpActions helpActions, ReceiverManager receiverManager, ViewManager viewManager,
-            Map<Integer, Boolean> columnVisibility, UpdateService updateService, Runnable openLogsAction,
-            Runnable exitAction) {
-        this.receiverManager = receiverManager;
-        this.viewManager = viewManager;
-        this.columnVisibility = columnVisibility;
+	public LogSyncProMenu(LogSyncPro mainFrame, ViewActions viewActions, RemoteActions remoteActions, HelpActions helpActions,
+			ReceiverManager receiverManager, ViewManager viewManager, Map<Integer, Boolean> columnVisibility, UpdateService updateService,
+			Runnable openLogsAction, Runnable exitAction) {
+		this.receiverManager = receiverManager;
+		this.viewManager = viewManager;
+		this.columnVisibility = columnVisibility;
 
-        JMenu fileMenu = new JMenu("File");
+		JMenu fileMenu = new JMenu("File");
 
-        JMenuItem openItem = new JMenuItem("Open (Multi)");
-        openItem.addActionListener(e -> openLogsAction.run());
-        fileMenu.add(openItem);
+		JMenuItem openItem = new JMenuItem("Open (Multi)");
+		openItem.addActionListener(e -> openLogsAction.run());
+		fileMenu.add(openItem);
 
-        JMenuItem importK8sItem = new JMenuItem("Import from K8s via SSH...");
-        importK8sItem.addActionListener(e -> remoteActions.importFromK8s(mainFrame, columnVisibility));
-        fileMenu.add(importK8sItem);
+		JMenuItem importK8sItem = new JMenuItem("Import from K8s via SSH...");
+		importK8sItem.addActionListener(e -> remoteActions.importFromK8s(mainFrame, columnVisibility));
+		fileMenu.add(importK8sItem);
 
-        mergeItem = new JMenuItem("Merge Selected Views");
-        mergeItem.addActionListener(e -> viewActions.mergeLogs(mainFrame, columnVisibility));
-        mergeItem.setEnabled(false);
-        fileMenu.add(mergeItem);
+		mergeItem = new JMenuItem("Merge Selected Views");
+		mergeItem.addActionListener(e -> viewActions.mergeLogs(mainFrame, columnVisibility));
+		mergeItem.setEnabled(false);
+		fileMenu.add(mergeItem);
 
-        closeSelectedItem = new JMenuItem("Close Selected Views");
-        closeSelectedItem.addActionListener(e -> viewActions.closeSelectedViews());
-        closeSelectedItem.setEnabled(false);
-        fileMenu.add(closeSelectedItem);
+		closeSelectedItem = new JMenuItem("Close Selected Views");
+		closeSelectedItem.addActionListener(e -> viewActions.closeSelectedViews());
+		closeSelectedItem.setEnabled(false);
+		fileMenu.add(closeSelectedItem);
 
-        fileMenu.addSeparator();
+		fileMenu.addSeparator();
 
-        JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(e -> exitAction.run());
-        fileMenu.add(exitItem);
+		JMenuItem exitItem = new JMenuItem("Exit");
+		exitItem.addActionListener(e -> exitAction.run());
+		fileMenu.add(exitItem);
 
-        add(fileMenu);
+		add(fileMenu);
 
-        logFileMenu = new JMenu("Logfile");
-        logFileMenu.setEnabled(false);
-        add(logFileMenu);
+		logFileMenu = new JMenu("Logfile");
+		logFileMenu.setEnabled(false);
+		add(logFileMenu);
 
-        JMenu settingsMenu = new JMenu("Settings");
+		JMenu settingsMenu = new JMenu("Settings");
 
-        JMenu receiverMenu = new JMenu("Receiver");
-        receiverMenu.addMenuListener(new MenuListener() {
-            @Override
-            public void menuSelected(MenuEvent e) {
-                updateReceiverMenu();
-            }
+		JMenu receiverMenu = new JMenu("Receiver");
+		receiverMenu.addMenuListener(new MenuListener() {
+			@Override
+			public void menuSelected(MenuEvent e) {
+				updateReceiverMenu();
+			}
 
-            @Override
-            public void menuDeselected(MenuEvent e) {
-            }
+			@Override
+			public void menuDeselected(MenuEvent e) {
+			}
 
-            @Override
-            public void menuCanceled(MenuEvent e) {
-            }
-        });
+			@Override
+			public void menuCanceled(MenuEvent e) {
+			}
+		});
 
-        for (LogStreamServer receiver : receiverManager.getReceivers()) {
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")",
-                    receiver.isRunning());
-            item.addActionListener(e -> {
-                try {
-                    if (item.isSelected()) {
-                        LspLogger.info("Starting receiver on port " + receiver.getPort());
-                        receiverManager.startReceiver(receiver.getPort());
-                    } else {
-                        LspLogger.info("Stopping receiver on port " + receiver.getPort());
-                        receiverManager.stopReceiver(receiver.getPort());
-                    }
-                } catch (Exception ex) {
-                    item.setSelected(false);
-                    LspLogger.error("Failed to start/stop receiver: " + ex.getMessage(), ex);
-                    JOptionPane.showMessageDialog(mainFrame, "Failed to start receiver: " + ex.getMessage());
-                }
-            });
-            receiverMenuItems.put(receiver.getPort(), item);
-            receiverMenu.add(item);
-        }
-        settingsMenu.add(receiverMenu);
-        settingsMenu.addSeparator();
+		for (LogStreamServer receiver : receiverManager.getReceivers()) {
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")", receiver.isRunning());
+			item.addActionListener(e -> {
+				try {
+					if (item.isSelected()) {
+						LspLogger.info("Starting receiver on port " + receiver.getPort());
+						receiverManager.startReceiver(receiver.getPort());
+					} else {
+						LspLogger.info("Stopping receiver on port " + receiver.getPort());
+						receiverManager.stopReceiver(receiver.getPort());
+					}
+				} catch (Exception ex) {
+					item.setSelected(false);
+					LspLogger.error("Failed to start/stop receiver: " + ex.getMessage(), ex);
+					JOptionPane.showMessageDialog(mainFrame, "Failed to start receiver: " + ex.getMessage());
+				}
+			});
+			receiverMenuItems.put(receiver.getPort(), item);
+			receiverMenu.add(item);
+		}
+		settingsMenu.add(receiverMenu);
+		settingsMenu.addSeparator();
 
-        JMenu columnsMenu = new JMenu("Columns");
-        for (int i = 0; i < COLUMN_NAMES.length; i++) {
-            final int colIndex = i;
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(COLUMN_NAMES[i], true);
-            item.addActionListener(e -> toggleColumnVisibility(colIndex, item.isSelected()));
-            columnsMenu.add(item);
-        }
-        settingsMenu.add(columnsMenu);
-        settingsMenu.addSeparator();
+		JMenu columnsMenu = new JMenu("Columns");
+		for (int i = 0; i < COLUMN_NAMES.length; i++) {
+			final int colIndex = i;
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(COLUMN_NAMES[i], true);
+			item.addActionListener(e -> toggleColumnVisibility(colIndex, item.isSelected()));
+			columnsMenu.add(item);
+		}
+		settingsMenu.add(columnsMenu);
+		settingsMenu.addSeparator();
 
-        JMenuItem loggingSettingsItem = new JMenuItem("Logging...");
-        loggingSettingsItem.addActionListener(e -> new LoggingSettingsDialog(mainFrame).setVisible(true));
-        settingsMenu.add(loggingSettingsItem);
+		JMenuItem loggingSettingsItem = new JMenuItem("Logging...");
+		loggingSettingsItem.addActionListener(e -> new LoggingSettingsDialog(mainFrame).setVisible(true));
+		settingsMenu.add(loggingSettingsItem);
 
-        add(settingsMenu);
+		add(settingsMenu);
 
-        add(Box.createHorizontalGlue());
+		add(Box.createHorizontalGlue());
 
-        JMenu helpMenu = new JMenu("Hilfe");
-        JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
-        quickGuideItem.addActionListener(e -> helpActions.openQuickGuide());
-        helpMenu.add(quickGuideItem);
+		JMenu helpMenu = new JMenu("Hilfe");
+		JMenuItem quickGuideItem = new JMenuItem("Kurzanleitung");
+		quickGuideItem.addActionListener(e -> helpActions.openQuickGuide());
+		helpMenu.add(quickGuideItem);
 
-        JMenuItem updateItem = new JMenuItem("Update");
-        updateItem.addActionListener(e -> updateService.checkForUpdatesAsync(true));
-        helpMenu.add(updateItem);
+		JMenuItem updateItem = new JMenuItem("Update");
+		updateItem.addActionListener(e -> updateService.checkForUpdatesAsync(true));
+		helpMenu.add(updateItem);
 
-        JMenuItem aboutItem = new JMenuItem("Über LogSyncPro");
-        aboutItem.addActionListener(e -> helpActions.openAboutDialog());
-        helpMenu.add(aboutItem);
+		JMenuItem aboutItem = new JMenuItem("Über LogSyncPro");
+		aboutItem.addActionListener(e -> helpActions.openAboutDialog());
+		helpMenu.add(aboutItem);
 
-        add(helpMenu);
-    }
+		add(helpMenu);
+	}
 
-    private void toggleColumnVisibility(int colIndex, boolean visible) {
-        LspLogger.info("Toggling column '" + COLUMN_NAMES[colIndex] + "' visibility to " + visible);
-        columnVisibility.put(colIndex, visible);
-        for (LogView view : viewManager.getLogViews()) {
-            view.setColumnVisibility(colIndex, visible);
-        }
-    }
+	private void toggleColumnVisibility(int colIndex, boolean visible) {
+		LspLogger.info("Toggling column '" + COLUMN_NAMES[colIndex] + "' visibility to " + visible);
+		columnVisibility.put(colIndex, visible);
+		for (LogView view : viewManager.getLogViews()) {
+			view.setColumnVisibility(colIndex, visible);
+		}
+	}
 
-    public void updateLogFileMenu() {
-        boolean hasLogs = !viewManager.getLogViews().isEmpty();
-        logFileMenu.setEnabled(hasLogs);
-        mergeItem.setEnabled(hasLogs);
-        closeSelectedItem.setEnabled(hasLogs);
+	public void updateLogFileMenu() {
+		boolean hasLogs = !viewManager.getLogViews().isEmpty();
+		logFileMenu.setEnabled(hasLogs);
+		mergeItem.setEnabled(hasLogs);
+		closeSelectedItem.setEnabled(hasLogs);
 
-        logFileMenu.removeAll();
-        for (LogView view : viewManager.getLogViews()) {
-            boolean isVisible = !viewManager.getMinimizedViews().contains(view);
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(view.getTitle(), isVisible);
-            item.addActionListener(e -> viewManager.toggleViewMinimized(view, !item.isSelected()));
-            logFileMenu.add(item);
-        }
-    }
+		logFileMenu.removeAll();
+		for (LogView view : viewManager.getLogViews()) {
+			boolean isVisible = !viewManager.getMinimizedViews().contains(view);
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(view.getTitle(), isVisible);
+			item.addActionListener(e -> viewManager.toggleViewMinimized(view, !item.isSelected()));
+			logFileMenu.add(item);
+		}
+	}
 
-    public void updateReceiverMenu() {
-        for (LogStreamServer receiver : receiverManager.getReceivers()) {
-            JCheckBoxMenuItem item = receiverMenuItems.get(receiver.getPort());
-            if (item != null) {
-                item.setSelected(receiver.isRunning());
-            }
-        }
-    }
+	public void updateReceiverMenu() {
+		for (LogStreamServer receiver : receiverManager.getReceivers()) {
+			JCheckBoxMenuItem item = receiverMenuItems.get(receiver.getPort());
+			if (item != null) {
+				item.setSelected(receiver.isRunning());
+			}
+		}
+	}
 }
