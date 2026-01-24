@@ -8,36 +8,30 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JInternalFrame;
 import javax.swing.JScrollBar;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
 import de.in.lsp.model.LogEntry;
+import de.in.lsp.ui.helper.DetailViewManager;
+import de.in.lsp.ui.helper.LogViewColumnManager;
+
 /**
- * A self-contained UI component that displays log entries in a table with
- * filtering capabilities.
+ * A self-contained UI component that displays log entries in a table with filtering capabilities.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
-import de.in.lsp.ui.helper.LogViewColumnManager;
-
 public class LogView extends JInternalFrame {
 
 	private final LogTableModel model;
@@ -47,8 +41,7 @@ public class LogView extends JInternalFrame {
 	private final List<LogEntry> entries;
 	private final BiConsumer<LogView, LocalDateTime> onSelectionChanged;
 	private final LogViewListener listener;
-	private LogDetailView detailView;
-	private JDialog detachedDialog;
+	private DetailViewManager detailViewManager;
 	private JSplitPane splitPane;
 	private FilteredTablePanel filteredTablePanel;
 	private boolean maximized = false;
@@ -61,10 +54,8 @@ public class LogView extends JInternalFrame {
 
 	private boolean isSelectedForAction = false; // Internal selection state
 	private int currentFontSize = 12;
-	private final Set<Integer> manuallyExpandedColumns = new HashSet<>();
 
-	public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
-			LogViewListener listener,
+	public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged, LogViewListener listener,
 			ViewType viewType) {
 		super(title, true, true, true, true);
 		this.entries = entries;
@@ -98,8 +89,8 @@ public class LogView extends JInternalFrame {
 
 			@Override
 			public void internalFrameClosing(javax.swing.event.InternalFrameEvent e) {
-				if (detachedDialog != null) {
-					detachedDialog.dispose();
+				if (detailViewManager != null) {
+					detailViewManager.close();
 				}
 				listener.onClose(LogView.this);
 			}
@@ -123,8 +114,6 @@ public class LogView extends JInternalFrame {
 		setLayout(new BorderLayout());
 		setBorder(null);
 
-		createDetailView();
-
 		// Filter + Table Setup
 		columnManager.setupTableColumns();
 
@@ -142,135 +131,22 @@ public class LogView extends JInternalFrame {
 		splitPane.setOneTouchExpandable(false);
 		splitPane.setBorder(null);
 
+		detailViewManager = new DetailViewManager(this, splitPane, listener);
+
 		add(splitPane, BorderLayout.CENTER);
 
 		filteredTablePanel.getTableScrollPane().addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
-				adjustMessageColumnWidth();
+				columnManager.adjustMessageColumnWidth();
 			}
 		});
 
 		filterPanel.updateFilters();
 		filterPanel.updateAlignment();
-		filterPanel.setUncollapseListener(this::onUncollapseColumn);
+		filterPanel.setUncollapseListener(columnManager::onUncollapseColumn);
 
 		setupKeyBindings();
-	}
-
-	public static final int MIN_MESSAGE_WIDTH = 250;
-
-	private void adjustMessageColumnWidth() {
-		TableColumnModel tcm = table.getColumnModel();
-		int totalWidth = filteredTablePanel.getTableScrollPane().getViewport().getWidth();
-		if (totalWidth <= 0)
-			return;
-
-		TableColumn msgCol = null;
-		List<TableColumn> otherCols = new ArrayList<>();
-		int currentOthersWidth = 0;
-
-		for (int i = 0; i < tcm.getColumnCount(); i++) {
-			TableColumn col = tcm.getColumn(i);
-			if (col.getModelIndex() == 5) {
-				msgCol = col;
-			} else {
-				otherCols.add(col);
-				currentOthersWidth += col.getWidth();
-			}
-		}
-
-		if (msgCol == null)
-			return;
-
-		// Collapsing Candidates & Priority: IP(4), Thread(2), Level(1), Logger(3),
-		// Timestamp(0-Last)
-		List<Integer> collapsePriority = List.of(4, 2, 1, 3, 0);
-		int availableForMsg = totalWidth - currentOthersWidth;
-
-		if (availableForMsg < MIN_MESSAGE_WIDTH) {
-			int needed = MIN_MESSAGE_WIDTH - availableForMsg;
-
-			for (Integer modelIdx : collapsePriority) {
-				if (needed <= 0)
-					break;
-
-				TableColumn target = null;
-				for (TableColumn c : otherCols) {
-					if (c.getModelIndex() == modelIdx) {
-						target = c;
-						break;
-					}
-				}
-
-				if (target != null && !manuallyExpandedColumns.contains(modelIdx)) {
-					// Check if collapsible (currently > 30)
-					if (target.getWidth() > 30) {
-						// Minimum collapsed width
-						int newW = 20;
-						int currentW = target.getWidth();
-						int saved = currentW - newW;
-
-						if (saved > 0) {
-							target.setMinWidth(newW);
-							target.setMaxWidth(newW);
-							target.setPreferredWidth(newW);
-							target.setWidth(newW);
-							needed -= saved;
-						}
-					}
-				}
-			}
-		} else {
-			// Check expansion if space is available (Reverse Priority)
-			List<Integer> expandPriority = new ArrayList<>(collapsePriority);
-			Collections.reverse(expandPriority);
-
-			int surplus = availableForMsg - MIN_MESSAGE_WIDTH;
-
-			for (Integer modelIdx : expandPriority) {
-				TableColumn target = null;
-				for (TableColumn c : otherCols) {
-					if (c.getModelIndex() == modelIdx) {
-						target = c;
-						break;
-					}
-				}
-
-				// If collapsed
-				if (target != null && target.getWidth() <= 30) {
-					// We use a heuristic width to check if we can expand
-					// Ideally we would know the exact restore width, but 100 is a safe bet for
-					// check
-					int estimateRestoreW = 100;
-
-					if (surplus >= estimateRestoreW) {
-						columnManager.restoreColumnWidth(modelIdx);
-						int actualRestoreW = target.getWidth();
-
-						surplus -= (actualRestoreW - 20);
-						manuallyExpandedColumns.remove(modelIdx);
-					}
-				}
-			}
-		}
-
-		// Final Step: Message Column takes remaining space
-		int finalOthersWidth = 0;
-		for (TableColumn c : otherCols) {
-			finalOthersWidth += c.getWidth();
-		}
-
-		int newMsgWidth = Math.max(10, totalWidth - finalOthersWidth);
-		msgCol.setPreferredWidth(newMsgWidth);
-		msgCol.setWidth(newMsgWidth);
-	}
-
-	private void onUncollapseColumn(int modelIndex) {
-		manuallyExpandedColumns.add(modelIndex);
-		columnManager.restoreColumnWidth(modelIndex);
-		// Re-layout (might shrink message)
-		adjustMessageColumnWidth();
 	}
 
 	private void setupKeyBindings() {
@@ -282,13 +158,12 @@ public class LogView extends JInternalFrame {
 		actionMap.put("closeDetail", new AbstractAction() {
 			@Override
 			public void actionPerformed(java.awt.event.ActionEvent e) {
-				toggleDetailView(false);
+				detailViewManager.toggleDetailView(false);
 			}
 		});
 
 		// Message filter toggle shortcut
-		inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_DOWN_MASK),
-				"toggleFilter");
+		inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_DOWN_MASK), "toggleFilter");
 		actionMap.put("toggleFilter", new AbstractAction() {
 			@Override
 			public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -299,104 +174,6 @@ public class LogView extends JInternalFrame {
 				}
 			}
 		});
-	}
-
-	private void createDetailView() {
-		detailView = new LogDetailView(
-				() -> detachDetailView(),
-				() -> toggleDetailView(false));
-	}
-
-	private void detachDetailView() {
-		// Calculate better width:
-		// Not excessively wide, but enough for text.
-		// Start with 800 or half screen width?
-		int width = 800;
-		int height = 600;
-
-		java.awt.GraphicsConfiguration gc = getGraphicsConfiguration();
-		if (gc != null) {
-			java.awt.Rectangle bounds = gc.getBounds();
-			width = Math.min(bounds.width - 100, 1000);
-			height = Math.min(bounds.height - 100, 600);
-		}
-
-		if (splitPane.getBottomComponent() == detailView) {
-			splitPane.setBottomComponent(null);
-		}
-
-		if (detachedDialog == null) {
-			detachedDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Log Details",
-					java.awt.Dialog.ModalityType.MODELESS);
-			detachedDialog.setLayout(new BorderLayout());
-			detachedDialog.add(detailView);
-			detachedDialog.setSize(width, height);
-			detachedDialog.setLocationRelativeTo(this);
-			detachedDialog.addWindowListener(new java.awt.event.WindowAdapter() {
-				@Override
-				public void windowClosing(java.awt.event.WindowEvent e) {
-					reattachDetailView();
-				}
-			});
-
-			// Add Zoom Shortcuts to Dialog
-			javax.swing.JRootPane rootPane = detachedDialog.getRootPane();
-			javax.swing.InputMap inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-			javax.swing.ActionMap actionMap = rootPane.getActionMap();
-
-			inputMap.put(KeyStroke.getKeyStroke("control EQUALS"), "zoomIn");
-			inputMap.put(KeyStroke.getKeyStroke("control ADD"), "zoomIn");
-			inputMap.put(KeyStroke.getKeyStroke("control PLUS"), "zoomIn");
-			actionMap.put("zoomIn", new AbstractAction() {
-				@Override
-				public void actionPerformed(java.awt.event.ActionEvent e) {
-					listener.onIncreaseFontSize();
-				}
-			});
-
-			inputMap.put(KeyStroke.getKeyStroke("control MINUS"), "zoomOut");
-			inputMap.put(KeyStroke.getKeyStroke("control SUBTRACT"), "zoomOut");
-			actionMap.put("zoomOut", new AbstractAction() {
-				@Override
-				public void actionPerformed(java.awt.event.ActionEvent e) {
-					listener.onDecreaseFontSize();
-				}
-			});
-
-		} else {
-			detachedDialog.getContentPane().add(detailView);
-		}
-
-		detachedDialog.setVisible(true);
-	}
-
-	private void reattachDetailView() {
-		if (detachedDialog != null) {
-			detachedDialog.dispose();
-			detachedDialog = null;
-		}
-		toggleDetailView(true);
-	}
-
-	private void toggleDetailView(boolean show) {
-		if (show) {
-			if (detachedDialog != null && detachedDialog.isVisible()) {
-				// Already detached and visible, update content is handled by caller
-				return;
-			}
-			if (splitPane.getBottomComponent() == null) {
-				splitPane.setBottomComponent(detailView);
-				splitPane.setDividerLocation(0.7);
-			}
-		} else {
-			if (detachedDialog != null) {
-				detachedDialog.dispose();
-				detachedDialog = null;
-			}
-			if (splitPane.getBottomComponent() != null) {
-				splitPane.setBottomComponent(null);
-			}
-		}
 	}
 
 	public void setColumnVisibility(int modelIndex, boolean visible) {
@@ -415,15 +192,15 @@ public class LogView extends JInternalFrame {
 
 					if (row != -1 && col != -1) {
 						int modelColumn = table.convertColumnIndexToModel(col);
-						if (modelColumn == 0) { // Timestamp column
+						if (modelColumn == LogColumn.TIMESTAMP.getIndex()) { // Timestamp column
 							LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
 							if (onSelectionChanged != null) {
 								onSelectionChanged.accept(LogView.this, selected.timestamp());
 							}
-						} else if (modelColumn == 5) { // Message column
+						} else if (modelColumn == LogColumn.MESSAGE.getIndex()) { // Message column
 							LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
-							toggleDetailView(true);
-							detailView.setEntry(selected);
+							detailViewManager.toggleDetailView(true);
+							detailViewManager.setEntry(selected);
 						}
 					}
 				}
@@ -435,7 +212,7 @@ public class LogView extends JInternalFrame {
 				int row = table.getSelectedRow();
 				if (row != -1) {
 					LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
-					detailView.setEntry(selected);
+					detailViewManager.setEntry(selected);
 				}
 			}
 		});
@@ -443,8 +220,7 @@ public class LogView extends JInternalFrame {
 
 	public void scrollToTimestamp(LocalDateTime timestamp) {
 		// Binary Search for nearest timestamp
-		int index = Collections.binarySearch(entries,
-				new LogEntry(timestamp, null, null, null, null, null, null, null));
+		int index = Collections.binarySearch(entries, new LogEntry(timestamp, null, null, null, null, null, null, null));
 		if (index < 0) {
 			index = -(index + 1);
 		}
@@ -510,9 +286,9 @@ public class LogView extends JInternalFrame {
 		table.setFont(font);
 		table.setRowHeight(newSize + 4); // Add some padding
 		columnManager.setupTableColumns(font); // Recalculate optimal widths for new font
-		adjustMessageColumnWidth(); // Apply collapsing logic
-		if (detailView != null) {
-			detailView.setFontSize(newSize);
+		columnManager.adjustMessageColumnWidth(); // Apply collapsing logic
+		if (detailViewManager != null) {
+			detailViewManager.setFontSize(newSize);
 		}
 	}
 
@@ -535,9 +311,8 @@ public class LogView extends JInternalFrame {
 
 		// Hide IP column for remote views where IP is in title
 		if (viewType == ViewType.TCP
-				|| (clientIp != null && !clientIp.isEmpty() && !"localhost".equals(clientIp)
-						&& !"127.0.0.1".equals(clientIp))) {
-			hideColumnPermanently(4);
+				|| (clientIp != null && !clientIp.isEmpty() && !"localhost".equals(clientIp) && !"127.0.0.1".equals(clientIp))) {
+			hideColumnPermanently(LogColumn.IP.getIndex());
 		}
 	}
 
