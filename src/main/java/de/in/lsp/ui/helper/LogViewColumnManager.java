@@ -52,24 +52,28 @@ public class LogViewColumnManager {
             permanentlyHiddenColumns.add(0);
 
         // 1: Level
-        boolean hasLevel = entries.stream().anyMatch(e -> e.level() != null && !e.level().isEmpty());
+        boolean hasLevel = entries.stream().anyMatch(e -> isNotEmpty(e.level()));
         if (!hasLevel)
             permanentlyHiddenColumns.add(1);
 
         // 2: Thread
-        boolean hasThread = entries.stream().anyMatch(e -> e.thread() != null && !e.thread().isEmpty());
+        boolean hasThread = entries.stream().anyMatch(e -> isNotEmpty(e.thread()));
         if (!hasThread)
             permanentlyHiddenColumns.add(2);
 
         // 3: Logger
-        boolean hasLogger = entries.stream().anyMatch(e -> e.loggerName() != null && !e.loggerName().isEmpty());
+        boolean hasLogger = entries.stream().anyMatch(e -> isNotEmpty(e.loggerName()));
         if (!hasLogger)
             permanentlyHiddenColumns.add(3);
 
         // 4: IP
-        boolean hasIp = entries.stream().anyMatch(e -> e.ip() != null && !e.ip().isEmpty());
+        boolean hasIp = entries.stream().anyMatch(e -> isNotEmpty(e.ip()));
         if (!hasIp)
             permanentlyHiddenColumns.add(4);
+    }
+
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.trim().isEmpty() && !"UNKNOWN".equalsIgnoreCase(value.trim());
     }
 
     public void setupTableColumns() {
