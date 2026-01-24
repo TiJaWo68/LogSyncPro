@@ -71,6 +71,15 @@ public class LogViewColumnManager {
         boolean hasIp = entries.stream().anyMatch(e -> isNotEmpty(e.ip()));
         if (!hasIp)
             permanentlyHiddenColumns.add(4);
+
+        // 6: Source (Only for Merged views usually)
+        long uniqueSources = entries.stream()
+                .map(LogEntry::sourceFile)
+                .filter(this::isNotEmpty)
+                .distinct()
+                .count();
+        if (uniqueSources <= 1)
+            permanentlyHiddenColumns.add(6);
     }
 
     private boolean isNotEmpty(String value) {
@@ -223,6 +232,30 @@ public class LogViewColumnManager {
         }
         for (TableColumn col : currentCols) {
             tcm.addColumn(col);
+        }
+    }
+
+    public void restoreColumnWidth(int modelIndex) {
+        TableColumn col = getColumnByModelIndex(table.getColumnModel(), modelIndex);
+        if (col == null)
+            return;
+
+        FontMetrics fm = table.getFontMetrics(table.getFont());
+
+        if (modelIndex == 0 || modelIndex == 1 || modelIndex == 4) {
+            // Fixed columns: Timestamp, Level, IP
+            int w = calculateOptimalWidth(fm, modelIndex, 50);
+            setColumnWidth(col, w);
+        } else if (modelIndex == 2 || modelIndex == 3) {
+            // Resizable columns: Thread, Logger
+            // Use timestamp as base width guide or default to 120
+            int tsWidth = calculateOptimalWidth(fm, 0, 50);
+            int w = (tsWidth > 0) ? tsWidth : 120;
+            // Ensure min width is respected
+            col.setMinWidth(100);
+            col.setMaxWidth(Integer.MAX_VALUE);
+            col.setPreferredWidth(w);
+            col.setWidth(w);
         }
     }
 
