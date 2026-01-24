@@ -340,6 +340,20 @@ public class LogSyncPro extends JFrame implements LogViewListener {
         viewManager.updateFocusedView(view);
     }
 
+    @Override
+    public void onIncreaseFontSize() {
+        int newSize = Math.max(8, Math.min(40, viewManager.getFontSize() + 1));
+        viewManager.setFontSize(newSize);
+        saveFontSize(newSize);
+    }
+
+    @Override
+    public void onDecreaseFontSize() {
+        int newSize = Math.max(8, Math.min(40, viewManager.getFontSize() - 1));
+        viewManager.setFontSize(newSize);
+        saveFontSize(newSize);
+    }
+
     private void loadFrameState() {
         Preferences prefs = Preferences.userNodeForPackage(LogSyncPro.class);
         int x = prefs.getInt(PREF_X, -1);
