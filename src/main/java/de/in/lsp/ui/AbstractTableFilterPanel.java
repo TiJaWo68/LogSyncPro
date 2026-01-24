@@ -81,6 +81,12 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
         // Default: do nothing
     }
 
+    private java.util.function.Consumer<Integer> uncollapseListener;
+
+    public void setUncollapseListener(java.util.function.Consumer<Integer> uncollapseListener) {
+        this.uncollapseListener = uncollapseListener;
+    }
+
     /**
      * Updates the alignment of filter components with table columns.
      */
@@ -93,19 +99,40 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
             int modelIndex = col.getModelIndex();
             int width = col.getWidth();
 
-            JComponent comp = getComponentForColumn(modelIndex);
+            JComponent comp;
+            if (width < 35) { // Minimal width threshold for collapsed state
+                JButton btn = new JButton(); // No text
+                styleAsHeaderButton(btn);
+
+                Color fg = btn.getForeground();
+                btn.setIcon(new ExpandIcon(fg != null ? fg : Color.BLACK));
+
+                // Make it more distinct as a button
+                btn.setBorder(BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+                btn.setToolTipText("Uncollapse " + table.getModel().getColumnName(modelIndex));
+                btn.addActionListener(e -> {
+                    if (uncollapseListener != null) {
+                        uncollapseListener.accept(modelIndex);
+                    }
+                });
+                comp = btn;
+            } else {
+                comp = getComponentForColumn(modelIndex);
+            }
 
             comp.setPreferredSize(new Dimension(width, 26));
             comp.setMinimumSize(new Dimension(width, 26));
             comp.setMaximumSize(new Dimension(width, 26));
 
-            comp.setBorder(BorderFactory.createCompoundBorder(
-                    UIManager.getBorder("TableHeader.cellBorder"),
-                    BorderFactory.createEmptyBorder(0, 5, 0, 2)));
-            if (comp.getBorder() == null) {
+            if (!(comp instanceof JButton)) {
                 comp.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY),
-                        BorderFactory.createEmptyBorder(0, 5, 0, 5)));
+                        UIManager.getBorder("TableHeader.cellBorder"),
+                        BorderFactory.createEmptyBorder(0, 5, 0, 2)));
+                if (comp.getBorder() == null) {
+                    comp.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY),
+                            BorderFactory.createEmptyBorder(0, 5, 0, 5)));
+                }
             }
 
             add(comp);
@@ -141,21 +168,18 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
 
     protected void styleAsHeaderButton(JButton btn) {
         btn.setFocusable(false);
-        btn.setOpaque(false);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
+        // btn.setOpaque(false); // Can be opaque for collapsed button
+        btn.setContentAreaFilled(true); // Allow filling to see the button better
+        // btn.setBorderPainted(false); // We want border for the collapse button
+
         Font font = UIManager.getFont("TableHeader.font");
         if (font != null) {
             btn.setFont(font);
         } else {
             btn.setFont(btn.getFont().deriveFont(Font.BOLD));
         }
-        Color fg = UIManager.getColor("TableHeader.foreground");
-        if (fg != null) {
-            btn.setForeground(fg);
-        } else {
-            btn.setForeground(Color.LIGHT_GRAY);
-        }
-        btn.setHorizontalAlignment(JButton.LEFT);
+
+        // For the collapsed button, maybe just standard button look or small
+        btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
     }
 }
