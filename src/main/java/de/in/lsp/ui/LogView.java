@@ -8,7 +8,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
 import javax.swing.AbstractAction;
@@ -58,6 +61,7 @@ public class LogView extends JInternalFrame {
 
 	private boolean isSelectedForAction = false; // Internal selection state
 	private int currentFontSize = 12;
+	private final Set<Integer> manuallyExpandedColumns = new HashSet<>();
 
 	public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
 			LogViewListener listener,
@@ -149,9 +153,12 @@ public class LogView extends JInternalFrame {
 
 		filterPanel.updateFilters();
 		filterPanel.updateAlignment();
+		filterPanel.setUncollapseListener(this::onUncollapseColumn);
 
 		setupKeyBindings();
 	}
+
+	public static final int MIN_MESSAGE_WIDTH = 250;
 
 	private void adjustMessageColumnWidth() {
 		TableColumnModel tcm = table.getColumnModel();
@@ -159,21 +166,111 @@ public class LogView extends JInternalFrame {
 		if (totalWidth <= 0)
 			return;
 
-		int otherColsWidth = 0;
 		TableColumn msgCol = null;
+		List<TableColumn> otherCols = new ArrayList<>();
+		int currentOthersWidth = 0;
+
 		for (int i = 0; i < tcm.getColumnCount(); i++) {
 			TableColumn col = tcm.getColumn(i);
 			if (col.getModelIndex() == 5) {
 				msgCol = col;
 			} else {
-				otherColsWidth += col.getWidth();
+				otherCols.add(col);
+				currentOthersWidth += col.getWidth();
 			}
 		}
 
-		if (msgCol != null) {
-			int newWidth = Math.max(100, totalWidth - otherColsWidth);
-			msgCol.setPreferredWidth(newWidth);
+		if (msgCol == null)
+			return;
+
+		// Collapsing Candidates & Priority: IP(4), Thread(2), Level(1), Logger(3),
+		// Timestamp(0-Last)
+		List<Integer> collapsePriority = List.of(4, 2, 1, 3, 0);
+		int availableForMsg = totalWidth - currentOthersWidth;
+
+		if (availableForMsg < MIN_MESSAGE_WIDTH) {
+			int needed = MIN_MESSAGE_WIDTH - availableForMsg;
+
+			for (Integer modelIdx : collapsePriority) {
+				if (needed <= 0)
+					break;
+
+				TableColumn target = null;
+				for (TableColumn c : otherCols) {
+					if (c.getModelIndex() == modelIdx) {
+						target = c;
+						break;
+					}
+				}
+
+				if (target != null && !manuallyExpandedColumns.contains(modelIdx)) {
+					// Check if collapsible (currently > 30)
+					if (target.getWidth() > 30) {
+						// Minimum collapsed width
+						int newW = 20;
+						int currentW = target.getWidth();
+						int saved = currentW - newW;
+
+						if (saved > 0) {
+							target.setMinWidth(newW);
+							target.setMaxWidth(newW);
+							target.setPreferredWidth(newW);
+							target.setWidth(newW);
+							needed -= saved;
+						}
+					}
+				}
+			}
+		} else {
+			// Check expansion if space is available (Reverse Priority)
+			List<Integer> expandPriority = new ArrayList<>(collapsePriority);
+			Collections.reverse(expandPriority);
+
+			int surplus = availableForMsg - MIN_MESSAGE_WIDTH;
+
+			for (Integer modelIdx : expandPriority) {
+				TableColumn target = null;
+				for (TableColumn c : otherCols) {
+					if (c.getModelIndex() == modelIdx) {
+						target = c;
+						break;
+					}
+				}
+
+				// If collapsed
+				if (target != null && target.getWidth() <= 30) {
+					// We use a heuristic width to check if we can expand
+					// Ideally we would know the exact restore width, but 100 is a safe bet for
+					// check
+					int estimateRestoreW = 100;
+
+					if (surplus >= estimateRestoreW) {
+						columnManager.restoreColumnWidth(modelIdx);
+						int actualRestoreW = target.getWidth();
+
+						surplus -= (actualRestoreW - 20);
+						manuallyExpandedColumns.remove(modelIdx);
+					}
+				}
+			}
 		}
+
+		// Final Step: Message Column takes remaining space
+		int finalOthersWidth = 0;
+		for (TableColumn c : otherCols) {
+			finalOthersWidth += c.getWidth();
+		}
+
+		int newMsgWidth = Math.max(10, totalWidth - finalOthersWidth);
+		msgCol.setPreferredWidth(newMsgWidth);
+		msgCol.setWidth(newMsgWidth);
+	}
+
+	private void onUncollapseColumn(int modelIndex) {
+		manuallyExpandedColumns.add(modelIndex);
+		columnManager.restoreColumnWidth(modelIndex);
+		// Re-layout (might shrink message)
+		adjustMessageColumnWidth();
 	}
 
 	private void setupKeyBindings() {
@@ -413,6 +510,7 @@ public class LogView extends JInternalFrame {
 		table.setFont(font);
 		table.setRowHeight(newSize + 4); // Add some padding
 		columnManager.setupTableColumns(font); // Recalculate optimal widths for new font
+		adjustMessageColumnWidth(); // Apply collapsing logic
 		if (detailView != null) {
 			detailView.setFontSize(newSize);
 		}
