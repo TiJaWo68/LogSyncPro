@@ -15,6 +15,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JInternalFrame;
 import javax.swing.JScrollBar;
 import javax.swing.JSplitPane;
@@ -44,6 +45,7 @@ public class LogView extends JInternalFrame {
 	private final BiConsumer<LogView, LocalDateTime> onSelectionChanged;
 	private final LogViewListener listener;
 	private LogDetailView detailView;
+	private JDialog detachedDialog;
 	private JSplitPane splitPane;
 	private FilteredTablePanel filteredTablePanel;
 	private boolean maximized = false;
@@ -55,6 +57,7 @@ public class LogView extends JInternalFrame {
 	private LogViewFilterPanel filterPanel;
 
 	private boolean isSelectedForAction = false; // Internal selection state
+	private int currentFontSize = 12;
 
 	public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
 			LogViewListener listener,
@@ -91,6 +94,9 @@ public class LogView extends JInternalFrame {
 
 			@Override
 			public void internalFrameClosing(javax.swing.event.InternalFrameEvent e) {
+				if (detachedDialog != null) {
+					detachedDialog.dispose();
+				}
 				listener.onClose(LogView.this);
 			}
 
@@ -199,17 +205,100 @@ public class LogView extends JInternalFrame {
 	}
 
 	private void createDetailView() {
-		detailView = new LogDetailView(() -> toggleDetailView(false));
+		detailView = new LogDetailView(
+				() -> detachDetailView(),
+				() -> toggleDetailView(false));
+	}
+
+	private void detachDetailView() {
+		// Calculate better width:
+		// Not excessively wide, but enough for text.
+		// Start with 800 or half screen width?
+		int width = 800;
+		int height = 600;
+
+		java.awt.GraphicsConfiguration gc = getGraphicsConfiguration();
+		if (gc != null) {
+			java.awt.Rectangle bounds = gc.getBounds();
+			width = Math.min(bounds.width - 100, 1000);
+			height = Math.min(bounds.height - 100, 600);
+		}
+
+		if (splitPane.getBottomComponent() == detailView) {
+			splitPane.setBottomComponent(null);
+		}
+
+		if (detachedDialog == null) {
+			detachedDialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Log Details",
+					java.awt.Dialog.ModalityType.MODELESS);
+			detachedDialog.setLayout(new BorderLayout());
+			detachedDialog.add(detailView);
+			detachedDialog.setSize(width, height);
+			detachedDialog.setLocationRelativeTo(this);
+			detachedDialog.addWindowListener(new java.awt.event.WindowAdapter() {
+				@Override
+				public void windowClosing(java.awt.event.WindowEvent e) {
+					reattachDetailView();
+				}
+			});
+
+			// Add Zoom Shortcuts to Dialog
+			javax.swing.JRootPane rootPane = detachedDialog.getRootPane();
+			javax.swing.InputMap inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+			javax.swing.ActionMap actionMap = rootPane.getActionMap();
+
+			inputMap.put(KeyStroke.getKeyStroke("control EQUALS"), "zoomIn");
+			inputMap.put(KeyStroke.getKeyStroke("control ADD"), "zoomIn");
+			inputMap.put(KeyStroke.getKeyStroke("control PLUS"), "zoomIn");
+			actionMap.put("zoomIn", new AbstractAction() {
+				@Override
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					listener.onIncreaseFontSize();
+				}
+			});
+
+			inputMap.put(KeyStroke.getKeyStroke("control MINUS"), "zoomOut");
+			inputMap.put(KeyStroke.getKeyStroke("control SUBTRACT"), "zoomOut");
+			actionMap.put("zoomOut", new AbstractAction() {
+				@Override
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					listener.onDecreaseFontSize();
+				}
+			});
+
+		} else {
+			detachedDialog.getContentPane().add(detailView);
+		}
+
+		detachedDialog.setVisible(true);
+	}
+
+	private void reattachDetailView() {
+		if (detachedDialog != null) {
+			detachedDialog.dispose();
+			detachedDialog = null;
+		}
+		toggleDetailView(true);
 	}
 
 	private void toggleDetailView(boolean show) {
 		if (show) {
+			if (detachedDialog != null && detachedDialog.isVisible()) {
+				// Already detached and visible, update content is handled by caller
+				return;
+			}
 			if (splitPane.getBottomComponent() == null) {
 				splitPane.setBottomComponent(detailView);
 				splitPane.setDividerLocation(0.7);
 			}
-		} else if (splitPane.getBottomComponent() != null) {
-			splitPane.setBottomComponent(null);
+		} else {
+			if (detachedDialog != null) {
+				detachedDialog.dispose();
+				detachedDialog = null;
+			}
+			if (splitPane.getBottomComponent() != null) {
+				splitPane.setBottomComponent(null);
+			}
 		}
 	}
 
@@ -319,10 +408,14 @@ public class LogView extends JInternalFrame {
 	}
 
 	public void updateFontSize(int newSize) {
+		this.currentFontSize = newSize;
 		Font font = table.getFont().deriveFont((float) newSize);
 		table.setFont(font);
 		table.setRowHeight(newSize + 4); // Add some padding
 		columnManager.setupTableColumns(font); // Recalculate optimal widths for new font
+		if (detailView != null) {
+			detailView.setFontSize(newSize);
+		}
 	}
 
 	private void attachFocusTrigger(JComponent component) {
