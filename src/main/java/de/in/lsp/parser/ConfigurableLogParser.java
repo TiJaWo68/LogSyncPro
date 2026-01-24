@@ -52,15 +52,15 @@ public class ConfigurableLogParser implements LogParser {
                     try {
                         LocalDateTime ts = LocalDateTime.parse(matcher.group(config.timestampGroup()), formatter);
                         String level = matcher.group(config.levelGroup());
-                        String thread = (config.threadGroup() != -1) ? matcher.group(config.threadGroup()) : "UNKNOWN";
-                        String logger = (config.loggerGroup() != -1) ? matcher.group(config.loggerGroup()) : "UNKNOWN";
-                        String ip = (config.ipGroup() != -1) ? matcher.group(config.ipGroup()) : "UNKNOWN";
-                        String message = matcher.group(config.messageGroup());
+                        String thread = getGroupOrDefault(matcher, config.threadGroup(), "");
+                        String logger = getGroupOrDefault(matcher, config.loggerGroup(), "");
+                        String ip = getGroupOrDefault(matcher, config.ipGroup(), "");
+                        String message = getGroupOrDefault(matcher, config.messageGroup(), "");
 
                         // Flush header buffer if first match
                         if (lastEntry == null && !headerBuffer.isEmpty()) {
                             String combinedHeader = String.join("\n", headerBuffer);
-                            entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader,
+                            entries.add(new LogEntry(null, "", "", "", "", combinedHeader,
                                     sourceName, combinedHeader));
                             headerBuffer.clear();
                         }
@@ -89,11 +89,19 @@ public class ConfigurableLogParser implements LogParser {
             // If we NEVER found a match, but have headers, add them as one entry
             if (lastEntry == null && !headerBuffer.isEmpty()) {
                 String combinedHeader = String.join("\n", headerBuffer);
-                entries.add(new LogEntry(null, "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", combinedHeader, sourceName,
+                entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName,
                         combinedHeader));
             }
         }
         return entries;
+    }
+
+    private String getGroupOrDefault(Matcher matcher, int group, String defaultValue) {
+        if (group == -1) {
+            return defaultValue;
+        }
+        String val = matcher.group(group);
+        return (val != null) ? val : defaultValue;
     }
 
     @Override
