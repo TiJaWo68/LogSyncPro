@@ -69,6 +69,14 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
         // server.log (Broad pattern, moved lower)
         parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
 
+        // Istio Proxy (Tab separated)
+        parsers.add(new ConfigurableLogParser(new LogFormatConfig(
+                "Istio Proxy",
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z\\t.*",
+                "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z)\\t(\\w+)\\t(.*?)(?:\\t([a-zA-Z0-9_.-]+))?$",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+                1, 2, -1, 4, -1, 3)));
+
         // server.log.dicomservices (Spring Boot default-ish with ISO8601)
         parsers.add(new ConfigurableLogParser(new LogFormatConfig(
                 "server.log.dicomservices",
