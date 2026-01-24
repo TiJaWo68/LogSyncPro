@@ -28,6 +28,8 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
     private MultiSelectFilter levelFilter;
     private MultiSelectFilter threadFilter;
     private MultiSelectFilter loggerFilter;
+    private MultiSelectFilter ipFilter;
+    private MultiSelectFilter sourceFilter;
     private JTextField messageFilterField;
 
     public LogViewFilterPanel(JTable table, TableRowSorter<LogTableModel> sorter,
@@ -40,6 +42,8 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
         levelFilter = new MultiSelectFilter("Level", opts -> applyFilters());
         threadFilter = new MultiSelectFilter("Thread", opts -> applyFilters());
         loggerFilter = new MultiSelectFilter("Logger", opts -> applyFilters());
+        ipFilter = new MultiSelectFilter("IP", opts -> applyFilters());
+        sourceFilter = new MultiSelectFilter("Source", opts -> applyFilters());
 
         messageFilterField = new JTextField();
         messageFilterField.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
@@ -81,6 +85,8 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
         Set<String> levels = new HashSet<>();
         Set<String> threads = new HashSet<>();
         Set<String> loggers = new HashSet<>();
+        Set<String> ips = new HashSet<>();
+        Set<String> sources = new HashSet<>();
 
         LogTableModel model = (LogTableModel) table.getModel();
         List<LogEntry> entries = model.getEntries();
@@ -107,25 +113,38 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
             boolean matchesLevel = !levelFilter.isActive() || levelFilter.getSelectedOptions().contains(level);
             boolean matchesThread = !threadFilter.isActive() || threadFilter.getSelectedOptions().contains(thread);
             boolean matchesLogger = !loggerFilter.isActive() || loggerFilter.getSelectedOptions().contains(logger);
+            boolean matchesIp = !ipFilter.isActive() || ipFilter.getSelectedOptions().contains(entry.ip());
+            boolean matchesSource = !sourceFilter.isActive()
+                    || sourceFilter.getSelectedOptions().contains(entry.sourceFile());
 
             // Add to options if other filters match
-            if (matchesThread && matchesLogger && matchesMessage) {
+            if (matchesThread && matchesLogger && matchesIp && matchesSource && matchesMessage) {
                 if (level != null && !level.isEmpty())
                     levels.add(level);
             }
-            if (matchesLevel && matchesLogger && matchesMessage) {
+            if (matchesLevel && matchesLogger && matchesIp && matchesSource && matchesMessage) {
                 if (thread != null && !thread.isEmpty())
                     threads.add(thread);
             }
-            if (matchesLevel && matchesThread && matchesMessage) {
+            if (matchesLevel && matchesThread && matchesIp && matchesSource && matchesMessage) {
                 if (logger != null && !logger.isEmpty())
                     loggers.add(logger);
+            }
+            if (matchesLevel && matchesThread && matchesLogger && matchesSource && matchesMessage) {
+                if (entry.ip() != null && !entry.ip().isEmpty())
+                    ips.add(entry.ip());
+            }
+            if (matchesLevel && matchesThread && matchesLogger && matchesIp && matchesMessage) {
+                if (entry.sourceFile() != null && !entry.sourceFile().isEmpty())
+                    sources.add(entry.sourceFile());
             }
         }
 
         levelFilter.setOptions(levels);
         threadFilter.setOptions(threads);
         loggerFilter.setOptions(loggers);
+        ipFilter.setOptions(ips);
+        sourceFilter.setOptions(sources);
     }
 
     public void applyFilters() {
@@ -169,6 +188,28 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
                 });
             }
 
+            if (ipFilter.isActive()) {
+                Set<String> selected = ipFilter.getSelectedOptions();
+                filters.add(new RowFilter<>() {
+                    @Override
+                    public boolean include(Entry<? extends LogTableModel, ? extends Integer> entry) {
+                        Object val = entry.getValue(4);
+                        return val != null && selected.contains(val.toString());
+                    }
+                });
+            }
+
+            if (sourceFilter.isActive()) {
+                Set<String> selected = sourceFilter.getSelectedOptions();
+                filters.add(new RowFilter<>() {
+                    @Override
+                    public boolean include(Entry<? extends LogTableModel, ? extends Integer> entry) {
+                        Object val = entry.getValue(6);
+                        return val != null && selected.contains(val.toString());
+                    }
+                });
+            }
+
             String msgText = messageFilterField.getText();
             if (!msgText.isEmpty()) {
                 try {
@@ -195,7 +236,7 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
             case 1 -> levelFilter;
             case 2 -> threadFilter;
             case 3 -> loggerFilter;
-            case 4 -> createHeaderLabel("IP");
+            case 4 -> ipFilter;
             case 5 -> {
                 if (messageFilterField.isVisible()) {
                     yield messageFilterField;
@@ -209,7 +250,7 @@ public class LogViewFilterPanel extends AbstractTableFilterPanel<LogTableModel> 
                     yield btn;
                 }
             }
-            case 6 -> createHeaderLabel("");
+            case 6 -> sourceFilter;
             default -> {
                 JPanel p = new JPanel();
                 p.setOpaque(false);
