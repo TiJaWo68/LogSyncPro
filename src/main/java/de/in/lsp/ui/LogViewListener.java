@@ -13,4 +13,8 @@ public interface LogViewListener {
     void onMaximize(LogView view);
 
     void onFocusGained(LogView view);
+
+    void onIncreaseFontSize();
+
+    void onDecreaseFontSize();
 }
