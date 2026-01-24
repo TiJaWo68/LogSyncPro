@@ -1,5 +1,6 @@
 package de.in.lsp.ui.helper;
 
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,8 +78,12 @@ public class LogViewColumnManager {
     }
 
     public void setupTableColumns() {
+        setupTableColumns(table.getFont());
+    }
+
+    public void setupTableColumns(Font font) {
         TableColumnModel tcm = table.getColumnModel();
-        FontMetrics fm = table.getFontMetrics(table.getFont());
+        FontMetrics fm = table.getFontMetrics(font);
 
         // 0: Timestamp - Fixed
         setupColumn(tcm, 0, calculateOptimalWidth(fm, 0, 50), true);
@@ -141,6 +146,7 @@ public class LogViewColumnManager {
             } else {
                 col.setMinWidth(100);
                 col.setPreferredWidth(prefWidth);
+                col.setWidth(prefWidth);
                 col.setMaxWidth(Integer.MAX_VALUE);
             }
         }
@@ -168,9 +174,10 @@ public class LogViewColumnManager {
     }
 
     private void setColumnWidth(TableColumn col, int width) {
-        col.setPreferredWidth(width);
-        col.setMinWidth(width);
         col.setMaxWidth(width);
+        col.setMinWidth(width);
+        col.setPreferredWidth(width);
+        col.setWidth(width);
     }
 
     public void setColumnVisibility(int modelIndex, boolean visible) {
