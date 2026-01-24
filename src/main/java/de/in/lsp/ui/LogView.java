@@ -322,7 +322,7 @@ public class LogView extends JInternalFrame {
 		Font font = table.getFont().deriveFont((float) newSize);
 		table.setFont(font);
 		table.setRowHeight(newSize + 4); // Add some padding
-		columnManager.setupTableColumns(); // Recalculate optimal widths for new font
+		columnManager.setupTableColumns(font); // Recalculate optimal widths for new font
 	}
 
 	private void attachFocusTrigger(JComponent component) {
