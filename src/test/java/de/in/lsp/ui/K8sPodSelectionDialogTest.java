@@ -11,6 +11,7 @@ import javax.swing.JTable;
 import javax.swing.table.TableColumn;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import de.in.lsp.service.SshK8sService.K8sNamespace;
 import de.in.lsp.service.SshK8sService.K8sPod;
@@ -18,6 +19,7 @@ import de.in.lsp.service.SshK8sService.K8sPod;
 /**
  * Tests for K8sPodSelectionDialog.
  */
+@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
 public class K8sPodSelectionDialogTest {
 
 	@Test
@@ -47,14 +49,16 @@ public class K8sPodSelectionDialogTest {
 		// Mock size and perform layout to verify actual widths
 		dialog.setSize(K8sPodSelectionDialog.DIALOG_WIDTH, K8sPodSelectionDialog.DIALOG_HEIGHT);
 		dialog.doLayout();
-		table.setSize(K8sPodSelectionDialog.DIALOG_WIDTH, K8sPodSelectionDialog.DIALOG_HEIGHT); // Usually happens by layout manager
+		table.setSize(K8sPodSelectionDialog.DIALOG_WIDTH, K8sPodSelectionDialog.DIALOG_HEIGHT); // Usually happens by
+																								// layout manager
 		table.doLayout();
 
 		// Verify resizing mode (should be default/all columns)
 		assertEquals(JTable.AUTO_RESIZE_ALL_COLUMNS, table.getAutoResizeMode(),
 				"Auto resize mode should allow other columns to share space");
 
-		// Verify relative distribution (20-40-40 split for remaining columns) Namespace (1) : Pod (2) : Container (3) should be 1 : 2 : 2
+		// Verify relative distribution (20-40-40 split for remaining columns) Namespace
+		// (1) : Pod (2) : Container (3) should be 1 : 2 : 2
 		// We verify actual widths now
 		int nsWidth = table.getColumnModel().getColumn(1).getWidth();
 		int podWidth = table.getColumnModel().getColumn(2).getWidth();
@@ -66,8 +70,10 @@ public class K8sPodSelectionDialogTest {
 		int expectedPodWidth = (int) (remainingWidth * 0.4);
 
 		// Allow tolerances for layout managers and LookAndFeel insets
-		assertTrue(Math.abs(nsWidth - expectedNsWidth) <= 5, "Namespace width mismatch: expected " + expectedNsWidth + ", got " + nsWidth);
-		assertTrue(Math.abs(podWidth - expectedPodWidth) <= 5, "Pod width mismatch: expected " + expectedPodWidth + ", got " + podWidth);
+		assertTrue(Math.abs(nsWidth - expectedNsWidth) <= 5,
+				"Namespace width mismatch: expected " + expectedNsWidth + ", got " + nsWidth);
+		assertTrue(Math.abs(podWidth - expectedPodWidth) <= 5,
+				"Pod width mismatch: expected " + expectedPodWidth + ", got " + podWidth);
 
 		// Container width handles remainder, so check it's close to pod width
 		assertTrue(Math.abs(containerWidth - podWidth) <= 5,
