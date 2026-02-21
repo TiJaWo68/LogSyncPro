@@ -1,12 +1,7 @@
 package de.in.lsp.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -18,7 +13,6 @@ import java.util.function.BiConsumer;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
-import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -62,7 +56,6 @@ public class LogView extends JInternalFrame {
     private LogViewFilterPanel filterPanel;
 
     private boolean isSelectedForAction = false; // Internal selection state
-    private int currentFontSize = 12;
 
     private boolean followLog = false;
     private final String baseTitle;
@@ -351,7 +344,6 @@ public class LogView extends JInternalFrame {
     }
 
     public void updateFontSize(int newSize) {
-        this.currentFontSize = newSize;
         Font font = table.getFont().deriveFont((float) newSize);
         table.setFont(font);
         table.setRowHeight(newSize + 4); // Add some padding
