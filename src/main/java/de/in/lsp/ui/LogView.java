@@ -42,6 +42,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
@@ -112,10 +114,14 @@ public class LogView extends JInternalFrame {
     private JTextField messageFilterField;
 
     private boolean isSelectedForAction = false; // Internal selection state
+    private boolean followLog = false;
+    private final String baseTitle;
+    private boolean isProgrammaticSelection = false;
 
     public LogView(List<LogEntry> entries, String title, BiConsumer<LogView, LocalDateTime> onSelectionChanged,
             LogViewListener listener, ViewType viewType) {
         super(title, true, true, true, true);
+        this.baseTitle = title;
         // putClientProperty("JInternalFrame.titleAlignment", "center"); // Removed
         // centering
         this.entries = entries;
@@ -355,11 +361,21 @@ public class LogView extends JInternalFrame {
         });
 
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && splitPane.getBottomComponent() != null) {
-                int row = table.getSelectedRow();
-                if (row != -1) {
-                    LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
-                    detailView.setEntry(selected);
+            if (!e.getValueIsAdjusting()) {
+                if (!isProgrammaticSelection && followLog) {
+                    int row = table.getSelectedRow();
+                    // If user selects any row other than the last one, disable follow log
+                    if (row != -1 && row != table.getRowCount() - 1) {
+                        setFollowLog(false);
+                    }
+                }
+
+                if (splitPane.getBottomComponent() != null) {
+                    int row = table.getSelectedRow();
+                    if (row != -1) {
+                        LogEntry selected = model.getEntry(table.convertRowIndexToModel(row));
+                        detailView.setEntry(selected);
+                    }
                 }
             }
         });
@@ -407,13 +423,27 @@ public class LogView extends JInternalFrame {
                         @Override
                         public void mouseClicked(MouseEvent e) {
                             if (SwingUtilities.isRightMouseButton(e)) {
-                                setViewSelected(!isViewSelected());
+                                showTitlePopupMenu(e);
                             }
                         }
                     });
                 }
             }
         });
+    }
+
+    private void showTitlePopupMenu(MouseEvent e) {
+        JPopupMenu menu = new JPopupMenu();
+
+        JCheckBoxMenuItem selectItem = new JCheckBoxMenuItem("Selektieren", isViewSelected());
+        selectItem.addActionListener(ae -> setViewSelected(selectItem.isSelected()));
+        menu.add(selectItem);
+
+        JCheckBoxMenuItem followItem = new JCheckBoxMenuItem("Follow log", isFollowLog());
+        followItem.addActionListener(ae -> setFollowLog(followItem.isSelected()));
+        menu.add(followItem);
+
+        menu.show(e.getComponent(), e.getX(), e.getY());
     }
 
     private Icon getNormalIcon() {
@@ -425,24 +455,42 @@ public class LogView extends JInternalFrame {
         }
     }
 
-    private Icon getSelectedIcon() {
-        try {
-            return new com.formdev.flatlaf.extras.FlatSVGIcon("icons/selected.svg", 16, 16);
-        } catch (Exception e) {
-            return getNormalIcon(); // Fallback
-        }
-    }
-
     public boolean isViewSelected() {
         return isSelectedForAction;
     }
 
     public void setViewSelected(boolean selected) {
         this.isSelectedForAction = selected;
-        if (selected) {
-            setFrameIcon(getSelectedIcon());
+        updateTitleAndIcon();
+    }
+
+    private void updateTitleAndIcon() {
+        setFrameIcon(getNormalIcon());
+        if (isSelectedForAction) {
+            // Using HTML to insert the green check circle icon before the title
+            super.setTitle("<html><font color='#28a745'>\u2714</font> " + baseTitle + "</html>");
         } else {
-            setFrameIcon(getNormalIcon());
+            super.setTitle(baseTitle);
+        }
+    }
+
+    public boolean isFollowLog() {
+        return followLog;
+    }
+
+    public void setFollowLog(boolean followLog) {
+        this.followLog = followLog;
+        if (followLog) {
+            isProgrammaticSelection = true;
+            try {
+                int lastRow = table.getRowCount() - 1;
+                if (lastRow >= 0) {
+                    table.setRowSelectionInterval(lastRow, lastRow);
+                    table.scrollRectToVisible(table.getCellRect(lastRow, 0, true));
+                }
+            } finally {
+                isProgrammaticSelection = false;
+            }
         }
     }
 
@@ -519,10 +567,21 @@ public class LogView extends JInternalFrame {
             }
         }
 
-        // If sorting is active, the sorter will handle it.
-        // But we might want to auto-scroll if we were at the bottom.
-        boolean atBottom = isAtBottom();
-        if (atBottom) {
+        // If follow log is active, we scroll and select the last row.
+        if (followLog) {
+            SwingUtilities.invokeLater(() -> {
+                isProgrammaticSelection = true;
+                try {
+                    int lastRow = table.getRowCount() - 1;
+                    if (lastRow >= 0) {
+                        table.setRowSelectionInterval(lastRow, lastRow);
+                        table.scrollRectToVisible(table.getCellRect(lastRow, 0, true));
+                    }
+                } finally {
+                    isProgrammaticSelection = false;
+                }
+            });
+        } else if (isAtBottom()) {
             SwingUtilities.invokeLater(this::scrollToBottom);
         }
 
