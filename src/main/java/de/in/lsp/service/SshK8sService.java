@@ -40,15 +40,14 @@ public class SshK8sService implements AutoCloseable {
 	}
 
 	public List<K8sNamespace> discoverPods() throws IOException {
-		// Use sudo -S -i to ensure root environment is used, and feed password via
-		// stdin Using | as separator is more robust against
+		// Use sudo -S -i to ensure root environment is used, and feed password via stdin Using | as separator is more robust against
 		// whitespace mangling during "transport"
 		String command = "sudo -S -i kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{\"\\t\"}{.metadata.name}{\"\\t\"}{range .spec.containers[*]}{.name}{\" \"}{end}{\"\\n\"}{end}'";
 		LspLogger.info("Executing K8s pod discovery command.");
 		String output = executeCommand(command);
 		List<K8sNamespace> namespaces = parseK8sOutput(output);
-		LspLogger.info("Discovered " + namespaces.stream().mapToInt(n -> n.getPods().size()).sum() + " pods in "
-				+ namespaces.size() + " namespaces.");
+		LspLogger.info("Discovered " + namespaces.stream().mapToInt(n -> n.getPods().size()).sum() + " pods in " + namespaces.size()
+				+ " namespaces.");
 		return namespaces;
 	}
 
@@ -102,8 +101,7 @@ public class SshK8sService implements AutoCloseable {
 			if (line.isEmpty())
 				continue;
 
-			// Priority 1: Split by pipe (our new robust format) Priority 2: Split by tab
-			// Priority 3: Split by 2+ spaces (fallback for
+			// Priority 1: Split by pipe (our new robust format) Priority 2: Split by tab Priority 3: Split by 2+ spaces (fallback for
 			// manual command output)
 			String[] parts = line.split("\\|");
 			if (parts.length < 2) {

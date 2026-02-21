@@ -85,8 +85,7 @@ public class AboutDialog extends JDialog {
 		}
 
 		// Close on Escape
-		getRootPane().registerKeyboardAction(e -> dispose(),
-				javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+		getRootPane().registerKeyboardAction(e -> dispose(), javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
 				JComponent.WHEN_IN_FOCUSED_WINDOW);
 	}
 
@@ -213,12 +212,10 @@ public class AboutDialog extends JDialog {
 
 	private void addLib(JPanel container, String name, String version, String license, String url) {
 		JPanel item = new JPanel(new BorderLayout());
-		item.setBorder(
-				BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
-						BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+		item.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
+				BorderFactory.createEmptyBorder(8, 0, 8, 0)));
 
-		JLabel nameLabel = new JLabel(
-				"<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>");
+		JLabel nameLabel = new JLabel("<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>");
 		JLabel licenseLabel = new JLabel("License: " + license);
 		licenseLabel.setForeground(Color.GRAY);
 

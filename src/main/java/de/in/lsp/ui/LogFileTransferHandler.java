@@ -15,32 +15,32 @@ import javax.swing.TransferHandler;
  */
 public class LogFileTransferHandler extends TransferHandler {
 
-    private final Consumer<List<File>> onFilesDropped;
+	private final Consumer<List<File>> onFilesDropped;
 
-    public LogFileTransferHandler(Consumer<List<File>> onFilesDropped) {
-        this.onFilesDropped = onFilesDropped;
-    }
+	public LogFileTransferHandler(Consumer<List<File>> onFilesDropped) {
+		this.onFilesDropped = onFilesDropped;
+	}
 
-    @Override
-    public boolean canImport(TransferSupport support) {
-        return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
-    }
+	@Override
+	public boolean canImport(TransferSupport support) {
+		return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+	}
 
-    @Override
-    public boolean importData(TransferSupport support) {
-        if (!canImport(support))
-            return false;
-        try {
-            Transferable t = support.getTransferable();
-            @SuppressWarnings("unchecked")
-            List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-            if (files != null && !files.isEmpty()) {
-                onFilesDropped.accept(files);
-                return true;
-            }
-        } catch (Exception e) {
-            // Ignore (log if possible, but here we just return false)
-        }
-        return false;
-    }
+	@Override
+	public boolean importData(TransferSupport support) {
+		if (!canImport(support))
+			return false;
+		try {
+			Transferable t = support.getTransferable();
+			@SuppressWarnings("unchecked")
+			List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
+			if (files != null && !files.isEmpty()) {
+				onFilesDropped.accept(files);
+				return true;
+			}
+		} catch (Exception e) {
+			// Ignore (log if possible, but here we just return false)
+		}
+		return false;
+	}
 }

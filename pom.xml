@@ -6,7 +6,7 @@
 
     <groupId>de.in.lsp</groupId>
     <artifactId>LogSyncPro</artifactId>
-    <version>0.5.0</version>
+    <version>0.7.1</version>
 
     <description>Advanced Log Viewer</description>
     <inceptionYear>2026</inceptionYear>
@@ -32,7 +32,7 @@
     <repositories>
 		<repository>
 			<id>github</id>
-			<url>https://maven.pkg.github.com/TiJaWo68/SimpleUpDraft4J</url>
+			<url>https://maven.pkg.github.com/TiJaWo68/simpleupdraft4j</url>
 		</repository>
 	</repositories>
 
@@ -141,8 +141,8 @@
         <!-- Auto-Update Library -->
         <dependency>
             <groupId>de.in</groupId>
-            <artifactId>SimpleUpDraft4J</artifactId>
-            <version>0.0.1</version>
+            <artifactId>simpleupdraft4j</artifactId>
+            <version>[0.1.6,2.0.0)</version>
         </dependency>
     </dependencies>
 

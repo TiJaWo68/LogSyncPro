@@ -1,0 +1,9 @@
+#!/bin/bash
+# LogSyncPro Linux Launcher
+
+# Resolve the directory where the script is located
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Run the application
+# Assumes LogSyncPro.jar is in the same directory and lib/ is present
+exec java -jar "$DIR/LogSyncPro.jar" "$@"

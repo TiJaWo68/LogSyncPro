@@ -21,55 +21,55 @@ import de.in.lsp.util.LspLogger;
  */
 public class LibraryLoader {
 
-    public record LibraryInfo(String name, String version, String license, String url) {
-    }
+	public record LibraryInfo(String name, String version, String license, String url) {
+	}
 
-    public List<LibraryInfo> loadLibraries() {
-        List<LibraryInfo> libs = new ArrayList<>();
-        try (InputStream is = getClass().getResourceAsStream("/licenses.xml")) {
-            if (is == null) {
-                return libs; // No licenses.xml found
-            }
+	public List<LibraryInfo> loadLibraries() {
+		List<LibraryInfo> libs = new ArrayList<>();
+		try (InputStream is = getClass().getResourceAsStream("/licenses.xml")) {
+			if (is == null) {
+				return libs; // No licenses.xml found
+			}
 
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(is);
-            doc.getDocumentElement().normalize();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
 
-            NodeList nList = doc.getElementsByTagName("dependency");
+			NodeList nList = doc.getElementsByTagName("dependency");
 
-            for (int i = 0; i < nList.getLength(); i++) {
-                Node nNode = nList.item(i);
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
+			for (int i = 0; i < nList.getLength(); i++) {
+				Node nNode = nList.item(i);
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element eElement = (Element) nNode;
 
-                    String name = getTagValue("name", eElement);
-                    if (name.isEmpty())
-                        name = getTagValue("artifactId", eElement); // Fallback
+					String name = getTagValue("name", eElement);
+					if (name.isEmpty())
+						name = getTagValue("artifactId", eElement); // Fallback
 
-                    String version = getTagValue("version", eElement);
-                    String url = getTagValue("url", eElement);
+					String version = getTagValue("version", eElement);
+					String url = getTagValue("url", eElement);
 
-                    // License
-                    String licenseName = "";
-                    NodeList licenses = eElement.getElementsByTagName("license");
-                    if (licenses.getLength() > 0) {
-                        Element lElement = (Element) licenses.item(0);
-                        licenseName = getTagValue("name", lElement);
-                    }
+					// License
+					String licenseName = "";
+					NodeList licenses = eElement.getElementsByTagName("license");
+					if (licenses.getLength() > 0) {
+						Element lElement = (Element) licenses.item(0);
+						licenseName = getTagValue("name", lElement);
+					}
 
-                    libs.add(new LibraryInfo(name, version, licenseName, url));
-                }
-            }
-        } catch (Exception e) {
-            LspLogger.error("Failed to load licenses.xml", e);
-        }
-        return libs;
-    }
+					libs.add(new LibraryInfo(name, version, licenseName, url));
+				}
+			}
+		} catch (Exception e) {
+			LspLogger.error("Failed to load licenses.xml", e);
+		}
+		return libs;
+	}
 
-    private String getTagValue(String tag, Element element) {
-        NodeList nlList = element.getElementsByTagName(tag).item(0).getChildNodes();
-        Node nValue = (Node) nlList.item(0);
-        return nValue == null ? "" : nValue.getNodeValue().trim();
-    }
+	private String getTagValue(String tag, Element element) {
+		NodeList nlList = element.getElementsByTagName(tag).item(0).getChildNodes();
+		Node nValue = (Node) nlList.item(0);
+		return nValue == null ? "" : nValue.getNodeValue().trim();
+	}
 }
