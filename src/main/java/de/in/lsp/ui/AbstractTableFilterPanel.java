@@ -20,7 +20,8 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 /**
- * Base class for a panel that displays filter components aligned with JTable columns.
+ * Base class for a panel that displays filter components aligned with JTable
+ * columns.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
@@ -72,7 +73,8 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
 	}
 
 	/**
-	 * Called when table data changes or filters are applied. Subclasses should override this to refresh their filter options.
+	 * Called when table data changes or filters are applied. Subclasses should
+	 * override this to refresh their filter options.
 	 * Implementation should ideally use faceted search logic (cross-filtering).
 	 */
 	protected void onTableDataChanged() {
@@ -98,7 +100,7 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
 			int width = col.getWidth();
 
 			JComponent comp;
-			if (width < 35) { // Minimal width threshold for collapsed state
+			if (width < 35 && col.getResizable()) { // Collapsed state only for resizable columns
 				JButton btn = new JButton(); // No text
 				styleAsHeaderButton(btn);
 
@@ -126,8 +128,9 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
 				comp.setBorder(BorderFactory.createCompoundBorder(UIManager.getBorder("TableHeader.cellBorder"),
 						BorderFactory.createEmptyBorder(0, 5, 0, 2)));
 				if (comp.getBorder() == null) {
-					comp.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY),
-							BorderFactory.createEmptyBorder(0, 5, 0, 5)));
+					comp.setBorder(
+							BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.GRAY),
+									BorderFactory.createEmptyBorder(0, 5, 0, 5)));
 				}
 			}
 
@@ -139,7 +142,8 @@ public abstract class AbstractTableFilterPanel<M extends TableModel> extends JPa
 	}
 
 	/**
-	 * Subclasses must provide the filter component for the given model column index.
+	 * Subclasses must provide the filter component for the given model column
+	 * index.
 	 */
 	protected abstract JComponent getComponentForColumn(int modelIndex);
 
