@@ -315,6 +315,13 @@ public class LogView extends JInternalFrame {
         }
     }
 
+    /**
+     * Returns the plain title without HTML selection icon markup.
+     */
+    public String getBaseTitle() {
+        return baseTitle;
+    }
+
     public boolean isFollowLog() {
         return followLog;
     }
