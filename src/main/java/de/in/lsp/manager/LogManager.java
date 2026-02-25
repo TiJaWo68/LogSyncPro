@@ -19,7 +19,8 @@ import de.in.lsp.parser.MultiPatternLogParser;
 import de.in.lsp.parser.PatternBasedLogParser;
 
 /**
- * Handles the loading and orchestration of log files. Provides support for archives (.zip, .7z, .gz) and auto-detects the correct parser
+ * Handles the loading and orchestration of log files. Provides support for
+ * archives (.zip, .7z, .gz) and auto-detects the correct parser
  * for each log.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
@@ -60,14 +61,30 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 		// mirth.log (as PatternBased)
 		parsers.add(new PatternBasedLogParser("%level %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %logger: %msg%n"));
 
-		// diagnost-services (reported issue) 09:00:40.743 [restartedMain] INFO com.pacs.client.ClientServices - ... \tSourceFile
+		// diagnost-services (reported issue) 09:00:40.743 [restartedMain] INFO
+		// com.pacs.client.ClientServices - ... \tSourceFile
 		parsers.add(new PatternBasedLogParser("%d{HH:mm:ss.SSS} [%t] %level  %logger - %msg%n"));
 
 		// server.log (Broad pattern, moved lower)
 		parsers.add(new PatternBasedLogParser("%d{yyyy-MM-dd HH:mm:ss,SSS} %level %t [%logger] %msg%n"));
 
+		// SWV: Logback internal format (e.g. "10:31:39,416 |-INFO in ch.qos.logback...
+		// - message")
+		parsers.add(new ConfigurableLogParser(new LogFormatConfig("SWV Logback Internal",
+				"^\\d{2}:\\d{2}:\\d{2},\\d{3}\\s+\\|-\\w+\\s+in\\s+.*",
+				"^(\\d{2}:\\d{2}:\\d{2},\\d{3})\\s+\\|-(\\w+)\\s+in\\s+(.*?)\\s+-\\s+(.*)$", "HH:mm:ss,SSS", 1, 2, -1,
+				3, -1, 4)));
+
+		// SWV: Spring Boot condensed format (e.g. "10:31:50.633 INFO
+		// at.dedalus.swv.SwvApplication - Started...")
+		parsers.add(new ConfigurableLogParser(new LogFormatConfig("SWV Spring Boot",
+				"^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s+\\w+\\s+.*",
+				"^(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(\\w+)\\s+(.*?)\\s+-\\s+(.*)$", "HH:mm:ss.SSS", 1, 2, -1, 3, -1,
+				4)));
+
 		// Istio Proxy (Tab separated)
-		parsers.add(new ConfigurableLogParser(new LogFormatConfig("Istio Proxy", "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z\\t.*",
+		parsers.add(new ConfigurableLogParser(new LogFormatConfig("Istio Proxy",
+				"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z\\t.*",
 				"^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z)\\t(\\w+)\\t(.*?)(?:\\t([a-zA-Z0-9_.-]+))?$",
 				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", 1, 2, -1, 4, -1, 3)));
 
@@ -79,16 +96,19 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 
 		// Postgres / Patroni
 		parsers.add(new MultiPatternLogParser("Postgres (mixed)",
-				Arrays.asList("%d{yyyy-MM-dd HH:mm:ss,SSS} %level: %msg%n", "%d{yyyy-MM-dd HH:mm:ss.SSS} UTC [%t] %level %msg%n")));
+				Arrays.asList("%d{yyyy-MM-dd HH:mm:ss,SSS} %level: %msg%n",
+						"%d{yyyy-MM-dd HH:mm:ss.SSS} UTC [%t] %level %msg%n")));
 
 		// Access Log (Nginx/Apache)
 		parsers.add(new PatternBasedLogParser("%h - - [%d{dd/MMM/yyyy:HH:mm:ss Z}] %msg%n"));
 
 		// Legacy-Default as fallback
-		parsers.add(new ConfigurableLogParser(new LogFormatConfig("Legacy-Default", "^\\[.*\\] .*", "^\\[(.*?)\\]\\s+(\\w+)\\s+(.*)$",
-				"yyyy-MM-dd HH:mm:ss", 1, 2, -1, -1, -1, 3)));
+		parsers.add(new ConfigurableLogParser(
+				new LogFormatConfig("Legacy-Default", "^\\[.*\\] .*", "^\\[(.*?)\\]\\s+(\\w+)\\s+(.*)$",
+						"yyyy-MM-dd HH:mm:ss", 1, 2, -1, -1, -1, 3)));
 
-		// Unpack ArchiveLogLoader which handles recursion We pass 'this::parseStream' to allow ArchiveLogLoader to call back into
+		// Unpack ArchiveLogLoader which handles recursion We pass 'this::parseStream'
+		// to allow ArchiveLogLoader to call back into
 		// LogManager for parsing unpacked streams
 		this.archiveLoader = new ArchiveLogLoader(this, (is, name) -> {
 			try {
@@ -144,9 +164,12 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 	public boolean shouldSkipExtension(String name) {
 		String n = name.toLowerCase();
 		// Skip obvious binary or non-log extensions
-		return n.endsWith(".class") || n.endsWith(".jar") || n.endsWith(".exe") || n.endsWith(".dll") || n.endsWith(".so")
-				|| n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".gif") || n.endsWith(".pdf")
-				|| n.endsWith(".zip") || n.endsWith(".7z") || n.endsWith(".gz") || n.endsWith(".tar") || n.endsWith(".iso");
+		return n.endsWith(".class") || n.endsWith(".jar") || n.endsWith(".exe") || n.endsWith(".dll")
+				|| n.endsWith(".so")
+				|| n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".gif")
+				|| n.endsWith(".pdf")
+				|| n.endsWith(".zip") || n.endsWith(".7z") || n.endsWith(".gz") || n.endsWith(".tar")
+				|| n.endsWith(".iso");
 	}
 
 	public List<LogEntry> parseStream(InputStream is, String sourceName) throws Exception {
@@ -154,7 +177,8 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 	}
 
 	private List<LogEntry> parseWithAutoDetect(InputStream is, String sourceName) throws Exception {
-		// Read the first 128KB to detect the parser (increased from 16KB for large headers)
+		// Read the first 128KB to detect the parser (increased from 16KB for large
+		// headers)
 		int bufferSize = 128 * 1024;
 		byte[] buffer = new byte[bufferSize];
 		int bytesRead = 0;
@@ -169,10 +193,14 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 
 		// Check for binary content in the read buffer
 		if (isBinaryContent(buffer, bytesRead)) {
-			// Treat as binary, ignore. But we must NOT close the stream if it's a shielded stream from a zip, the caller handles the stream
-			// lifecycle (except valid parsing which consumes it). Actually, parseWithAutoDetect is responsible for the stream provided to
-			// it. If we return early, we might leave it open? The caller (loadFromZip) uses CloseShieldInputStream, so closing it inside
-			// here is a no-op for the underlying zip stream, but good practice to 'close' the wrapper.
+			// Treat as binary, ignore. But we must NOT close the stream if it's a shielded
+			// stream from a zip, the caller handles the stream
+			// lifecycle (except valid parsing which consumes it). Actually,
+			// parseWithAutoDetect is responsible for the stream provided to
+			// it. If we return early, we might leave it open? The caller (loadFromZip) uses
+			// CloseShieldInputStream, so closing it inside
+			// here is a no-op for the underlying zip stream, but good practice to 'close'
+			// the wrapper.
 			is.close();
 			return new ArrayList<>();
 		}
@@ -181,7 +209,8 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 		byte[] head = new byte[bytesRead];
 		System.arraycopy(buffer, 0, head, 0, bytesRead);
 
-		String firstLine = new BufferedReader(new StringReader(new String(head, java.nio.charset.StandardCharsets.UTF_8))).readLine();
+		String firstLine = new BufferedReader(
+				new StringReader(new String(head, java.nio.charset.StandardCharsets.UTF_8))).readLine();
 
 		List<LogParser> candidates = new ArrayList<>();
 		for (LogParser parser : parsers) {
@@ -197,7 +226,8 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 		}
 
 		if (selectedParser == null) {
-			// No candidate matched first line OR candidates produced no entries. Try ALL parsers (handles cases where the file starts with
+			// No candidate matched first line OR candidates produced no entries. Try ALL
+			// parsers (handles cases where the file starts with
 			// a header).
 			selectedParser = findBestParser(parsers, head, sourceName);
 		}
@@ -206,14 +236,16 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 			selectedParser = new de.in.lsp.parser.FallbackLogParser();
 		}
 
-		// Reconstruct the full stream: Head + Remaining Original Stream We pass this to the parser. The parser WILL close this stream. This
+		// Reconstruct the full stream: Head + Remaining Original Stream We pass this to
+		// the parser. The parser WILL close this stream. This
 		// is why we need CloseShieldInputStream in the caller.
 		InputStream fullStream = new SequenceInputStream(new ByteArrayInputStream(head), is);
 		return selectedParser.parse(fullStream, sourceName);
 	}
 
 	private boolean isBinaryContent(byte[] buffer, int length) {
-		// Simple heuristic: check for null bytes or excessive non-printable characters We check the first 1024 bytes or length
+		// Simple heuristic: check for null bytes or excessive non-printable characters
+		// We check the first 1024 bytes or length
 		int checkLen = Math.min(length, 1024);
 		int nullCount = 0;
 		int controlCount = 0;
@@ -255,9 +287,11 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 					}
 				}
 
-				// We prefer the parser that finds the most TIMED entries. If timedEntries are equal, we take the one with more total
+				// We prefer the parser that finds the most TIMED entries. If timedEntries are
+				// equal, we take the one with more total
 				// entries.
-				if (timedEntries > maxTimedEntries || (timedEntries == maxTimedEntries && entries.size() > maxTotalEntries)) {
+				if (timedEntries > maxTimedEntries
+						|| (timedEntries == maxTimedEntries && entries.size() > maxTotalEntries)) {
 					maxTimedEntries = timedEntries;
 					maxTotalEntries = entries.size();
 					bestParser = parser;
@@ -267,7 +301,8 @@ public class LogManager implements ArchiveLogLoader.LogManagerHelper {
 			}
 		}
 
-		// Return best parser if it found at least some TIMED entries. If no parser found timed entries, we prefer null to trigger
+		// Return best parser if it found at least some TIMED entries. If no parser
+		// found timed entries, we prefer null to trigger
 		// FallbackLogParser.
 		return (maxTimedEntries > 0) ? bestParser : null;
 	}
