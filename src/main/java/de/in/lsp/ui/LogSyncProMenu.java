@@ -35,13 +35,14 @@ public class LogSyncProMenu extends JMenuBar {
 
 	private final Map<Integer, JCheckBoxMenuItem> receiverMenuItems = new HashMap<>();
 	private final JMenu logFileMenu;
-	private final JMenuItem mergeItem;
-	private final JMenuItem closeSelectedItem;
+	private final JMenu selectedViewsMenu;
 
 	private final String[] COLUMN_NAMES = { "Timestamp", "Level", "Thread", "Logger", "IP", "Message", "Source" };
 
-	public LogSyncProMenu(LogSyncPro mainFrame, ViewActions viewActions, RemoteActions remoteActions, HelpActions helpActions,
-			ReceiverManager receiverManager, ViewManager viewManager, Map<Integer, Boolean> columnVisibility, UpdateService updateService,
+	public LogSyncProMenu(LogSyncPro mainFrame, ViewActions viewActions, RemoteActions remoteActions,
+			HelpActions helpActions,
+			ReceiverManager receiverManager, ViewManager viewManager, Map<Integer, Boolean> columnVisibility,
+			UpdateService updateService,
 			Runnable openLogsAction, Runnable exitAction) {
 		this.receiverManager = receiverManager;
 		this.viewManager = viewManager;
@@ -57,15 +58,24 @@ public class LogSyncProMenu extends JMenuBar {
 		importK8sItem.addActionListener(e -> remoteActions.importFromK8s(mainFrame, columnVisibility));
 		fileMenu.add(importK8sItem);
 
-		mergeItem = new JMenuItem("Merge Selected Views");
-		mergeItem.addActionListener(e -> viewActions.mergeLogs(mainFrame, columnVisibility));
-		mergeItem.setEnabled(false);
-		fileMenu.add(mergeItem);
+		fileMenu.addSeparator();
 
-		closeSelectedItem = new JMenuItem("Close Selected Views");
+		selectedViewsMenu = new JMenu("Selected Views");
+		selectedViewsMenu.setEnabled(false);
+
+		JMenuItem mergeItem = new JMenuItem("Merge");
+		mergeItem.addActionListener(e -> viewActions.mergeLogs(mainFrame, columnVisibility));
+		selectedViewsMenu.add(mergeItem);
+
+		JMenuItem closeSelectedItem = new JMenuItem("Close");
 		closeSelectedItem.addActionListener(e -> viewActions.closeSelectedViews());
-		closeSelectedItem.setEnabled(false);
-		fileMenu.add(closeSelectedItem);
+		selectedViewsMenu.add(closeSelectedItem);
+
+		JMenuItem exportItem = new JMenuItem("Export...");
+		exportItem.addActionListener(e -> viewActions.exportSelectedViews());
+		selectedViewsMenu.add(exportItem);
+
+		fileMenu.add(selectedViewsMenu);
 
 		fileMenu.addSeparator();
 
@@ -98,7 +108,8 @@ public class LogSyncProMenu extends JMenuBar {
 		});
 
 		for (LogStreamServer receiver : receiverManager.getReceivers()) {
-			JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")", receiver.isRunning());
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(receiver.getProtocol() + " (" + receiver.getPort() + ")",
+					receiver.isRunning());
 			item.addActionListener(e -> {
 				try {
 					if (item.isSelected()) {
@@ -165,8 +176,7 @@ public class LogSyncProMenu extends JMenuBar {
 	public void updateLogFileMenu() {
 		boolean hasLogs = !viewManager.getLogViews().isEmpty();
 		logFileMenu.setEnabled(hasLogs);
-		mergeItem.setEnabled(hasLogs);
-		closeSelectedItem.setEnabled(hasLogs);
+		selectedViewsMenu.setEnabled(hasLogs);
 
 		logFileMenu.removeAll();
 		for (LogView view : viewManager.getLogViews()) {
