@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,8 @@ import java.util.regex.Pattern;
 import de.in.lsp.model.LogEntry;
 
 /**
- * A general-purpose LogParser implementation that uses RegEx-based configuration to extract log entry details like timestamp, level, and
+ * A general-purpose LogParser implementation that uses RegEx-based
+ * configuration to extract log entry details like timestamp, level, and
  * message.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
@@ -49,7 +52,14 @@ public class ConfigurableLogParser implements LogParser {
 				Matcher matcher = pattern.matcher(line);
 				if (matcher.find()) {
 					try {
-						LocalDateTime ts = LocalDateTime.parse(matcher.group(config.timestampGroup()), formatter);
+						LocalDateTime ts;
+						try {
+							ts = LocalDateTime.parse(matcher.group(config.timestampGroup()), formatter);
+						} catch (Exception dateEx) {
+							// Fallback for time-only formats (e.g. HH:mm:ss,SSS)
+							LocalTime time = LocalTime.parse(matcher.group(config.timestampGroup()), formatter);
+							ts = time.atDate(LocalDate.now());
+						}
 						String level = matcher.group(config.levelGroup());
 						String thread = getGroupOrDefault(matcher, config.threadGroup(), "");
 						String logger = getGroupOrDefault(matcher, config.loggerGroup(), "");
@@ -66,7 +76,8 @@ public class ConfigurableLogParser implements LogParser {
 						lastEntry = new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
 						entries.add(lastEntry);
 					} catch (Exception e) {
-						// If parsing fails but it matched the regex, treat it as part of the previous message
+						// If parsing fails but it matched the regex, treat it as part of the previous
+						// message
 						if (lastEntry != null) {
 							lastEntry = lastEntry.appendMessage("\n" + line);
 							entries.set(entries.size() - 1, lastEntry);
