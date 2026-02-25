@@ -85,7 +85,8 @@ public class AboutDialog extends JDialog {
 		}
 
 		// Close on Escape
-		getRootPane().registerKeyboardAction(e -> dispose(), javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+		getRootPane().registerKeyboardAction(e -> dispose(),
+				javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
 				JComponent.WHEN_IN_FOCUSED_WINDOW);
 	}
 
@@ -179,7 +180,7 @@ public class AboutDialog extends JDialog {
 	private JPanel createLibrariesPanel() {
 		JPanel panel = new JPanel(new BorderLayout());
 
-		JLabel header = new JLabel("Verwendete Bibliotheken");
+		JLabel header = new JLabel("Verwendete Bibliotheken", SwingConstants.CENTER);
 		header.setFont(header.getFont().deriveFont(Font.BOLD, 18f));
 		header.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 		panel.add(header, BorderLayout.NORTH);
@@ -189,7 +190,16 @@ public class AboutDialog extends JDialog {
 
 		loadLibrariesFromXml(listPanel);
 
-		JScrollPane scrollPane = new JScrollPane(listPanel);
+		// Wrap in centering panel
+		JPanel centerWrapper = new JPanel(new java.awt.GridBagLayout());
+		java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+		gbc.anchor = java.awt.GridBagConstraints.CENTER;
+		gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
+		gbc.insets = new java.awt.Insets(0, 40, 0, 40);
+		centerWrapper.add(listPanel, gbc);
+
+		JScrollPane scrollPane = new JScrollPane(centerWrapper);
 		scrollPane.setBorder(null);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		panel.add(scrollPane, BorderLayout.CENTER);
@@ -202,33 +212,30 @@ public class AboutDialog extends JDialog {
 		List<LibraryInfo> libs = loader.loadLibraries();
 
 		for (LibraryInfo lib : libs) {
-			addLib(listPanel, lib.name(), lib.version(), lib.license(), lib.url());
+			addLib(listPanel, lib.artifactId(), lib.version(), lib.license(), lib.homepageUrl());
 		}
 
 		if (libs.isEmpty()) {
-			listPanel.add(new JLabel("Keine Lizenzinformationen gefunden (licenses.xml fehlt oder Fehler)."));
+			listPanel.add(new JLabel("Keine Bibliotheksinformationen gefunden (licenses.xml fehlt oder Fehler)."));
 		}
 	}
 
 	private void addLib(JPanel container, String name, String version, String license, String url) {
 		JPanel item = new JPanel(new BorderLayout());
-		item.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
-				BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+		item.setBorder(
+				BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)),
+						BorderFactory.createEmptyBorder(8, 0, 8, 0)));
 
-		JLabel nameLabel = new JLabel("<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>");
+		JLabel nameLabel = createHyperlink(
+				"<html><b>" + name + "</b> <span style='color:gray'>(" + version + ")</span></html>", url);
 		JLabel licenseLabel = new JLabel("License: " + license);
 		licenseLabel.setForeground(Color.GRAY);
-
-		JButton linkBtn = new JButton("Webseite");
-		linkBtn.putClientProperty("JButton.buttonType", "roundRect");
-		linkBtn.addActionListener(e -> openUrl(url));
 
 		JPanel textPanel = new JPanel(new BorderLayout());
 		textPanel.add(nameLabel, BorderLayout.NORTH);
 		textPanel.add(licenseLabel, BorderLayout.SOUTH);
 
 		item.add(textPanel, BorderLayout.CENTER);
-		item.add(linkBtn, BorderLayout.EAST);
 
 		item.setAlignmentX(Component.LEFT_ALIGNMENT);
 		container.add(item);
