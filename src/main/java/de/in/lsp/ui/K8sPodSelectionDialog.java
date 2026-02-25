@@ -9,8 +9,10 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 
@@ -70,7 +72,8 @@ public class K8sPodSelectionDialog extends JDialog {
 		table.getColumnModel().getColumn(0).setPreferredWidth(CHECKBOX_COL_WIDTH);
 		table.getColumnModel().getColumn(0).setResizable(false);
 
-		// Distribute remaining space: 20% Namespace, 40% Pod, 40% Container Dialog width is 600. Select is 25. Remaining is 575. 20% of 575
+		// Distribute remaining space: 20% Namespace, 40% Pod, 40% Container Dialog
+		// width is 600. Select is 25. Remaining is 575. 20% of 575
 		// = 115 40% of 575 = 230
 
 		int remainingWidth = DIALOG_WIDTH - CHECKBOX_COL_WIDTH;
@@ -85,13 +88,43 @@ public class K8sPodSelectionDialog extends JDialog {
 		K8sPodSelectionFilterPanel filterPanel = new K8sPodSelectionFilterPanel(table, sorter);
 		FilteredTablePanel filteredTablePanel = new FilteredTablePanel(table, filterPanel);
 
-		add(filteredTablePanel, BorderLayout.CENTER);
+		// Search field above the table
+		JPanel searchPanel = new JPanel(new BorderLayout(5, 0));
+		searchPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 6, 4, 6));
+		JLabel searchLabel = new JLabel("\uD83D\uDD0D"); // magnifying glass emoji
+		JTextField searchField = new JTextField();
+		searchField.setToolTipText("Search across all columns (substring, case-insensitive)");
+		searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+			@Override
+			public void insertUpdate(javax.swing.event.DocumentEvent e) {
+				filterPanel.setSearchText(searchField.getText());
+			}
+
+			@Override
+			public void removeUpdate(javax.swing.event.DocumentEvent e) {
+				filterPanel.setSearchText(searchField.getText());
+			}
+
+			@Override
+			public void changedUpdate(javax.swing.event.DocumentEvent e) {
+				filterPanel.setSearchText(searchField.getText());
+			}
+		});
+		searchPanel.add(searchLabel, BorderLayout.WEST);
+		searchPanel.add(searchField, BorderLayout.CENTER);
+
+		JPanel topPanel = new JPanel(new BorderLayout());
+		topPanel.add(searchPanel, BorderLayout.NORTH);
+		topPanel.add(filteredTablePanel, BorderLayout.CENTER);
+
+		add(topPanel, BorderLayout.CENTER);
 
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton okButton = new JButton("Import Selected");
 		okButton.addActionListener(e -> {
 			collectSelected();
-			LspLogger.info("User confirmed selection of " + selectedContainers.size() + " containers from selection dialog.");
+			LspLogger.info(
+					"User confirmed selection of " + selectedContainers.size() + " containers from selection dialog.");
 			confirmed = true;
 			dispose();
 		});
@@ -106,14 +139,16 @@ public class K8sPodSelectionDialog extends JDialog {
 		setLocationRelativeTo(parent);
 
 		// Escape key to close
-		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+		getRootPane().registerKeyboardAction(e -> dispose(),
+				KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
 				JComponent.WHEN_IN_FOCUSED_WINDOW);
 	}
 
 	private void collectSelected() {
 		for (int i = 0; i < tableModel.getRowCount(); i++) {
 			if ((Boolean) tableModel.getValueAt(i, 0)) {
-				selectedContainers.add(new SelectedContainer((String) tableModel.getValueAt(i, 1), (String) tableModel.getValueAt(i, 2),
+				selectedContainers.add(new SelectedContainer((String) tableModel.getValueAt(i, 1),
+						(String) tableModel.getValueAt(i, 2),
 						(String) tableModel.getValueAt(i, 3)));
 			}
 		}
