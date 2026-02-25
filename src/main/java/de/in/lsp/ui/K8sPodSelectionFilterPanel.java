@@ -25,6 +25,7 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 	private MultiSelectFilter podFilter;
 	private MultiSelectFilter containerFilter;
 	private JCheckBox selectAllCheckBox;
+	private String searchText = "";
 
 	public K8sPodSelectionFilterPanel(JTable table, TableRowSorter<DefaultTableModel> sorter) {
 		super(table, sorter);
@@ -67,20 +68,42 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 				break;
 			}
 		}
-		// Show "Checked" icon if not all are selected (suggesting "Select All") Show "Unchecked" icon if all are selected (suggesting
+		// Show "Checked" icon if not all are selected (suggesting "Select All") Show
+		// "Unchecked" icon if all are selected (suggesting
 		// "Deselect All")
 		selectAllCheckBox.setSelected(!allSelected);
 	}
 
 	/**
-	 * Extracts the human-readable base name of a pod by removing random suffixes. e.g. "auditrepository-7fcd847b65-rkdlp" ->
+	 * Extracts the human-readable base name of a pod by removing random suffixes.
+	 * e.g. "auditrepository-7fcd847b65-rkdlp" ->
 	 * "auditrepository" e.g. "act4telerad-0" -> "act4telerad"
 	 */
 	private String getPodBaseName(String podName) {
 		if (podName == null)
 			return "";
-		// Strip deployment hash + random suffix: -[8-10 chars]-[5 chars] Strip statefulset/job index: -[digits]
+		// Strip deployment hash + random suffix: -[8-10 chars]-[5 chars] Strip
+		// statefulset/job index: -[digits]
 		return podName.replaceAll("-(?:[a-z0-9]{8,15}-[a-z0-9]{5}|[0-9]+)$", "");
+	}
+
+	/**
+	 * Sets the global search text used for substring filtering across all columns.
+	 * Call this from the search text field
+	 * listener in the dialog.
+	 */
+	public void setSearchText(String text) {
+		this.searchText = text == null ? "" : text.trim().toLowerCase();
+		updateFilterOptions();
+		applyFilters();
+	}
+
+	private boolean matchesSearch(String ns, String pod, String container) {
+		if (searchText.isEmpty())
+			return true;
+		return (ns != null && ns.toLowerCase().contains(searchText))
+				|| (pod != null && pod.toLowerCase().contains(searchText))
+				|| (container != null && container.toLowerCase().contains(searchText));
 	}
 
 	public void updateFilterOptions() {
@@ -95,18 +118,21 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 			String container = (String) model.getValueAt(i, 3);
 			String podBase = getPodBaseName(pod);
 
+			boolean matchesSearchText = matchesSearch(ns, pod, container);
+
 			// Faceted search: only exclude the filter itself from the visible set check
 			boolean matchesNamespace = !namespaceFilter.isActive() || namespaceFilter.getSelectedOptions().contains(ns);
 			boolean matchesPod = !podFilter.isActive() || podFilter.getSelectedOptions().contains(podBase);
-			boolean matchesContainer = !containerFilter.isActive() || containerFilter.getSelectedOptions().contains(container);
+			boolean matchesContainer = !containerFilter.isActive()
+					|| containerFilter.getSelectedOptions().contains(container);
 
-			if (matchesPod && matchesContainer) {
+			if (matchesSearchText && matchesPod && matchesContainer) {
 				namespaces.add(ns);
 			}
-			if (matchesNamespace && matchesContainer) {
+			if (matchesSearchText && matchesNamespace && matchesContainer) {
 				pods.add(podBase);
 			}
-			if (matchesNamespace && matchesPod) {
+			if (matchesSearchText && matchesNamespace && matchesPod) {
 				containers.add(container);
 			}
 		}
@@ -122,6 +148,17 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 		isUpdating = true;
 		try {
 			List<RowFilter<DefaultTableModel, Integer>> filters = new ArrayList<>();
+
+			// Global search text filter: matches if any string column contains the search
+			// text
+			if (!searchText.isEmpty()) {
+				filters.add(new RowFilter<>() {
+					@Override
+					public boolean include(Entry<? extends DefaultTableModel, ? extends Integer> entry) {
+						return matchesSearch(entry.getStringValue(1), entry.getStringValue(2), entry.getStringValue(3));
+					}
+				});
+			}
 
 			if (namespaceFilter.isActive()) {
 				Set<String> selected = namespaceFilter.getSelectedOptions();
@@ -171,7 +208,8 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 				break;
 			}
 		}
-		// If there's an unchecked row, clicking should check everything. If all are checked, clicking should uncheck everything.
+		// If there's an unchecked row, clicking should check everything. If all are
+		// checked, clicking should uncheck everything.
 		boolean newState = anyDeselected || table.getRowCount() == 0;
 		for (int i = 0; i < table.getRowCount(); i++) {
 			table.setValueAt(newState, i, 0);
@@ -181,15 +219,15 @@ public class K8sPodSelectionFilterPanel extends AbstractTableFilterPanel<Default
 	@Override
 	protected JComponent getComponentForColumn(int modelIndex) {
 		return switch (modelIndex) {
-		case 0 -> selectAllCheckBox;
-		case 1 -> namespaceFilter;
-		case 2 -> podFilter;
-		case 3 -> containerFilter;
-		default -> {
-			JPanel p = new JPanel();
-			p.setOpaque(false);
-			yield p;
-		}
+			case 0 -> selectAllCheckBox;
+			case 1 -> namespaceFilter;
+			case 2 -> podFilter;
+			case 3 -> containerFilter;
+			default -> {
+				JPanel p = new JPanel();
+				p.setOpaque(false);
+				yield p;
+			}
 		};
 	}
 }
