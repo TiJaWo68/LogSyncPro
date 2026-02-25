@@ -2,13 +2,23 @@ package de.in.lsp.ui.actions;
 
 import java.awt.Component;
 import java.awt.KeyboardFocusManager;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import de.in.lsp.model.LogEntry;
 import de.in.lsp.ui.LogView;
@@ -19,7 +29,8 @@ import de.in.lsp.ui.ViewType;
 import de.in.lsp.util.LspLogger;
 
 /**
- * Handles view-related actions like merging, closing, and searching logs. Orchestrates interaction between the MainFrame and the
+ * Handles view-related actions like merging, closing, and searching logs.
+ * Orchestrates interaction between the MainFrame and the
  * ViewManager.
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
@@ -43,8 +54,11 @@ public class ViewActions {
 
 		for (LogView view : selectedViews) {
 			if (!view.hasTimestamps()) {
-				JOptionPane.showMessageDialog(parentFrame, "Merging is not possible because one of the selected views (" + view.getTitle()
-						+ ") contains entries without timestamps.", "Merge Failed", JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(parentFrame,
+								"Merging is not possible because one of the selected views (" + view.getTitle()
+										+ ") contains entries without timestamps.",
+								"Merge Failed", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
@@ -103,6 +117,96 @@ public class ViewActions {
 			LspLogger.info("Closing focused log view: " + viewManager.getFocusedLogView().getTitle());
 			viewManager.removeView(viewManager.getFocusedLogView());
 		}
+	}
+
+	/**
+	 * Exports log views: If multiple views are selected, exports as a ZIP archive.
+	 * If only one view is available
+	 * (selected or focused), exports as a single .log file. Uses a JFileChooser for
+	 * the target location.
+	 */
+	public void exportSelectedViews() {
+		List<LogView> selectedViews = viewManager.getLogViews().stream().filter(LogView::isViewSelected).toList();
+
+		// Fallback to focused view if none selected
+		if (selectedViews.isEmpty()) {
+			LogView focused = viewManager.getFocusedLogView();
+			if (focused != null) {
+				selectedViews = List.of(focused);
+			} else {
+				JOptionPane.showMessageDialog(parentFrame, "No log views selected or focused.");
+				return;
+			}
+		}
+
+		boolean multipleViews = selectedViews.size() > 1;
+		JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle("Export " + (multipleViews ? selectedViews.size() + " Views" : "View"));
+
+		if (multipleViews) {
+			chooser.setFileFilter(new FileNameExtensionFilter("ZIP Archive (*.zip)", "zip"));
+			chooser.setSelectedFile(new File("logs_export.zip"));
+		} else {
+			chooser.setFileFilter(new FileNameExtensionFilter("Log File (*.log)", "log"));
+			String suggestedName = sanitizeFilename(selectedViews.get(0).getBaseTitle()) + ".log";
+			chooser.setSelectedFile(new File(suggestedName));
+		}
+
+		if (chooser.showSaveDialog(parentFrame) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+
+		File target = chooser.getSelectedFile();
+		try {
+			if (multipleViews) {
+				if (!target.getName().toLowerCase().endsWith(".zip")) {
+					target = new File(target.getAbsolutePath() + ".zip");
+				}
+				exportAsZip(selectedViews, target);
+			} else {
+				if (!target.getName().toLowerCase().endsWith(".log")) {
+					target = new File(target.getAbsolutePath() + ".log");
+				}
+				exportSingleView(selectedViews.get(0), target);
+			}
+			LspLogger.info("Exported " + selectedViews.size() + " view(s) to " + target.getAbsolutePath());
+			JOptionPane.showMessageDialog(parentFrame, "Export successful:\n" + target.getAbsolutePath(),
+					"Export Complete", JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException ex) {
+			LspLogger.error("Export failed: " + ex.getMessage(), ex);
+			JOptionPane.showMessageDialog(parentFrame, "Export failed: " + ex.getMessage(), "Export Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void exportSingleView(LogView view, File target) throws IOException {
+		try (BufferedWriter writer = new BufferedWriter(
+				new OutputStreamWriter(new FileOutputStream(target), StandardCharsets.UTF_8))) {
+			for (LogEntry entry : view.getEntries()) {
+				writer.write(entry.rawLine());
+				writer.newLine();
+			}
+		}
+	}
+
+	private void exportAsZip(List<LogView> views, File target) throws IOException {
+		try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(target), StandardCharsets.UTF_8)) {
+			for (LogView view : views) {
+				String entryName = sanitizeFilename(view.getBaseTitle()) + ".log";
+				zos.putNextEntry(new ZipEntry(entryName));
+				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zos, StandardCharsets.UTF_8));
+				for (LogEntry entry : view.getEntries()) {
+					writer.write(entry.rawLine());
+					writer.newLine();
+				}
+				writer.flush();
+				zos.closeEntry();
+			}
+		}
+	}
+
+	private String sanitizeFilename(String name) {
+		return name.replaceAll("[^a-zA-Z0-9._\\-]", "_");
 	}
 
 	public void openSearchDialog() {
