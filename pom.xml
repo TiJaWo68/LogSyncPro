@@ -23,7 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flatlaf.version>3.7</flatlaf.version>
         <commons-compress.version>1.26.1</commons-compress.version>
-        <xz.version>1.9</xz.version>
+        <xz.version>1.12</xz.version>
         <miglayout.version>11.3</miglayout.version>
         <junit.version>5.10.2</junit.version>
         <slf4j.version>2.0.12</slf4j.version>
