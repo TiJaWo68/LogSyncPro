@@ -1,16 +1,33 @@
-# Set update schedule for dependencies
-
 version: 2
 updates:
+  # 1. GitHub Actions: Ein wöchentlicher Sammel-PR für alle Updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "friday"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
+  # 2. Maven: Gruppierung von Minor & Patch Updates
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "friday"
     open-pull-requests-limit: 10
+    
+    # Ignorierte Abhängigkeiten (wie von dir definiert)
     ignore:
       - dependency-name: "com.h2database:h2"
+
+    groups:
+      # Diese Gruppe fasst alle nicht-kritischen Updates zusammen
+      safe-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
