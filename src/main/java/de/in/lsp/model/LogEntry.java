@@ -8,10 +8,18 @@ import java.time.format.DateTimeFormatter;
  * 
  * @author TiJaWo68 in cooperation with Gemini 3 Flash using Antigravity
  */
-public record LogEntry(LocalDateTime timestamp, String level, String thread, String loggerName, String ip, String message,
+public record LogEntry(LocalDateTime timestamp, String level, String thread, String loggerName, String ip, int port, String message,
 		String sourceFile, String rawLine) implements Comparable<LogEntry> {
 
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+
+	/**
+	 * Backward-compatible constructor for cases where port is not known.
+	 */
+	public LogEntry(LocalDateTime timestamp, String level, String thread, String loggerName, String ip, String message,
+			String sourceFile, String rawLine) {
+		this(timestamp, level, thread, loggerName, ip, 0, message, sourceFile, rawLine);
+	}
 
 	public String getFormattedTimestamp() {
 		return timestamp != null ? timestamp.format(TIME_FORMATTER) : "";
@@ -45,7 +53,7 @@ public record LogEntry(LocalDateTime timestamp, String level, String thread, Str
 	}
 
 	public LogEntry appendMessage(String extra) {
-		return new LogEntry(timestamp, level, thread, loggerName, ip, message + extra, sourceFile, rawLine + extra);
+		return new LogEntry(timestamp, level, thread, loggerName, ip, port, message + extra, sourceFile, rawLine + extra);
 	}
 
 	@Override
