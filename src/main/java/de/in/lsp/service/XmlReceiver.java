@@ -25,6 +25,8 @@ public class XmlReceiver extends LogStreamServer {
 			.compile("<log4j:event.*?logger=\"(.*?)\".*?timestamp=\"(.*?)\".*?level=\"(.*?)\".*?thread=\"(.*?)\".*?>", Pattern.DOTALL);
 	private static final Pattern MESSAGE_PATTERN = Pattern.compile("<log4j:message><!\\[CDATA\\[(.*?)\\]\\]></log4j:message>",
 			Pattern.DOTALL);
+	private static final Pattern THROWABLE_PATTERN = Pattern.compile("<log4j:throwable><!\\[CDATA\\[(.*?)\\]\\]></log4j:throwable>",
+			Pattern.DOTALL);
 
 	public XmlReceiver(int port, BiConsumer<LogEntry, SocketAddress> entryConsumer) {
 		super(port, "XML", entryConsumer);
@@ -34,13 +36,14 @@ public class XmlReceiver extends LogStreamServer {
 	protected void handleConnection(Socket socket) {
 		String clientIp = socket.getInetAddress().getHostAddress();
 		SocketAddress remoteAddress = socket.getRemoteSocketAddress();
+		int port = socket.getPort();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 			StringBuilder buffer = new StringBuilder();
 			String line;
 			while (isRunning() && (line = reader.readLine()) != null) {
 				buffer.append(line).append("\n");
 				if (line.contains("</log4j:event>")) {
-					parseAndPublish(buffer.toString(), clientIp, remoteAddress);
+					parseAndPublish(buffer.toString(), clientIp, port, remoteAddress);
 					buffer.setLength(0);
 				}
 			}
@@ -56,7 +59,7 @@ public class XmlReceiver extends LogStreamServer {
 		}
 	}
 
-	private void parseAndPublish(String xml, String clientIp, SocketAddress remoteAddress) {
+	private void parseAndPublish(String xml, String clientIp, int port, SocketAddress remoteAddress) {
 		Matcher eventMatcher = EVENT_PATTERN.matcher(xml);
 		if (eventMatcher.find()) {
 			String logger = eventMatcher.group(1);
@@ -70,9 +73,14 @@ public class XmlReceiver extends LogStreamServer {
 				message = msgMatcher.group(1);
 			}
 
+			Matcher throwableMatcher = THROWABLE_PATTERN.matcher(xml);
+			if (throwableMatcher.find()) {
+				message += "\n" + throwableMatcher.group(1);
+			}
+
 			LocalDateTime ts = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
 
-			publish(new LogEntry(ts, level, thread, logger, clientIp, message, "RemoteApp", xml), remoteAddress);
+			publish(new LogEntry(ts, level, thread, logger, clientIp, port, message, "RemoteApp", xml), remoteAddress);
 		}
 	}
 }
