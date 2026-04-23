@@ -69,11 +69,11 @@ public class ConfigurableLogParser implements LogParser {
 						// Flush header buffer if first match
 						if (lastEntry == null && !headerBuffer.isEmpty()) {
 							String combinedHeader = String.join("\n", headerBuffer);
-							entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName, combinedHeader));
+							entries.add(new LogEntry(null, "", "", "", "", 0, combinedHeader, sourceName, combinedHeader));
 							headerBuffer.clear();
 						}
 
-						lastEntry = new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
+						lastEntry = new LogEntry(ts, level, thread, logger, ip, 0, message, sourceName, line);
 						entries.add(lastEntry);
 					} catch (Exception e) {
 						// If parsing fails but it matched the regex, treat it as part of the previous
@@ -97,7 +97,7 @@ public class ConfigurableLogParser implements LogParser {
 			// If we NEVER found a match, but have headers, add them as one entry
 			if (lastEntry == null && !headerBuffer.isEmpty()) {
 				String combinedHeader = String.join("\n", headerBuffer);
-				entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName, combinedHeader));
+				entries.add(new LogEntry(null, "", "", "", "", 0, combinedHeader, sourceName, combinedHeader));
 			}
 		}
 		return entries;
