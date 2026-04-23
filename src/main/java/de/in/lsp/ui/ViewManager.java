@@ -60,17 +60,22 @@ public class ViewManager {
 
 	public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility, LogViewListener listener,
 			ViewType viewType) {
-		return addLogView(entries, title, columnVisibility, listener, viewType, null, null);
+		return addLogView(entries, title, columnVisibility, listener, viewType, null, null, 0);
 	}
 
 	public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility, LogViewListener listener,
 			ViewType viewType, String appName, String clientIp) {
+		return addLogView(entries, title, columnVisibility, listener, viewType, appName, clientIp, 0);
+	}
+
+	public LogView addLogView(List<LogEntry> entries, String title, Map<Integer, Boolean> columnVisibility, LogViewListener listener,
+			ViewType viewType, String appName, String clientIp, int port) {
 		if (!SwingUtilities.isEventDispatchThread()) {
-			SwingUtilities.invokeLater(() -> addLogView(entries, title, columnVisibility, listener, viewType, appName, clientIp));
+			SwingUtilities.invokeLater(() -> addLogView(entries, title, columnVisibility, listener, viewType, appName, clientIp, port));
 			return null;
 		}
 		LogView logView = new LogView(new ArrayList<>(entries), title, this::syncOtherViews, listener, viewType);
-		logView.setMetaData(appName, clientIp);
+		logView.setMetaData(appName, clientIp, port);
 		if (!entries.isEmpty() && entries.get(0).loggerName() != null) {
 			logView.setInitialLoggerName(entries.get(0).loggerName());
 		}
@@ -212,18 +217,18 @@ public class ViewManager {
 	}
 
 	public LogView findView(String appName, String clientIp) {
-		return findView(appName, clientIp, null);
+		return findView(appName, clientIp, 0);
 	}
 
-	public LogView findView(String appName, String clientIp, String loggerName) {
+	public LogView findView(String appName, String clientIp, int port) {
 		if (appName == null || clientIp == null)
 			return null;
 		return logViews.stream().filter(v -> {
 			if (!appName.equals(v.getAppName()) || !clientIp.equals(v.getClientIp())) {
 				return false;
 			}
-			if ("RemoteApp".equals(appName) && loggerName != null) {
-				return loggerName.equals(v.getInitialLoggerName());
+			if ("RemoteApp".equals(appName)) {
+				return port == v.getRemotePort();
 			}
 			return true;
 		}).findFirst().orElse(null);
@@ -250,9 +255,9 @@ public class ViewManager {
 
 		String appName = entry.sourceFile();
 		String clientIp = entry.ip();
-		String loggerName = entry.loggerName();
+		int port = entry.port();
 
-		LogView existing = findView(appName, clientIp, loggerName);
+		LogView existing = findView(appName, clientIp, port);
 
 		if (existing != null) {
 			activeStreams.put(remoteAddress, existing);
@@ -260,7 +265,8 @@ public class ViewManager {
 			return;
 		}
 
-		String key = appName + "|" + clientIp + "|" + loggerName;
+		// Use remoteAddress as key for buffering to prevent multiple loggers from one connection creating multiple views
+		String key = remoteAddress.toString();
 		boolean[] isNew = { false };
 		pendingBuffers.compute(key, (k, buffer) -> {
 			if (buffer == null) {
@@ -281,13 +287,13 @@ public class ViewManager {
 				if (!"RemoteApp".equals(appName)) {
 					title += " (" + clientIp + ")";
 				} else {
-					title = "Remote(" + clientIp + "): " + entry.getSimpleLoggerName();
+					title = "Remote(" + clientIp + ":" + port + ")";
 				}
-				addLogView(initialEntries, title, columnVisibility, listener, ViewType.TCP, appName, clientIp);
+				addLogView(initialEntries, title, columnVisibility, listener, ViewType.TCP, appName, clientIp, port);
 				pendingBuffers.remove(key);
 
 				SwingUtilities.invokeLater(() -> {
-					LogView created = findView(appName, clientIp, loggerName);
+					LogView created = findView(appName, clientIp, port);
 					if (created != null) {
 						activeStreams.put(remoteAddress, created);
 					}
