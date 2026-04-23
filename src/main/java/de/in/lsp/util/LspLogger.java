@@ -81,7 +81,7 @@ public class LspLogger {
 						.filter(f -> !f.getClassName().equals(LspLogger.class.getName()) && !f.getClassName().contains("LogbackAppender"))
 						.findFirst().map(StackWalker.StackFrame::getClassName).orElse("LogSyncPro"));
 
-		LogEntry entry = new LogEntry(LocalDateTime.now(), level.name(), Thread.currentThread().getName(), caller, null, message,
+		LogEntry entry = new LogEntry(LocalDateTime.now(), level.name(), Thread.currentThread().getName(), caller, null, 0, message,
 				"internal", null);
 
 		synchronized (LspLogger.class) {
