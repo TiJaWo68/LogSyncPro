@@ -32,17 +32,18 @@ public class UniversalSerializedReceiver extends LogStreamServer {
 	protected void handleConnection(Socket socket) {
 		String clientIp = socket.getInetAddress().getHostAddress();
 		SocketAddress remoteAddress = socket.getRemoteSocketAddress();
+		int port = socket.getPort();
 		try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()))) {
 			while (isRunning()) {
 				Object obj = ois.readObject();
 				LogEntry entry = null;
 
 				if (obj instanceof ILoggingEvent event) {
-					entry = convertLogback(event, clientIp);
+					entry = convertLogback(event, clientIp, port);
 				} else if (obj instanceof LoggingEvent event) {
-					entry = convertLog4j1(event, clientIp);
+					entry = convertLog4j1(event, clientIp, port);
 				} else if (obj instanceof LogEvent event) {
-					entry = convertLog4j2(event, clientIp);
+					entry = convertLog4j2(event, clientIp, port);
 				}
 
 				if (entry != null) {
@@ -61,36 +62,56 @@ public class UniversalSerializedReceiver extends LogStreamServer {
 		}
 	}
 
-	private LogEntry convertLogback(ILoggingEvent event, String clientIp) {
+	private LogEntry convertLogback(ILoggingEvent event, String clientIp, int port) {
 		LocalDateTime ts = LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getTimeStamp()), ZoneId.systemDefault());
 		String appName = event.getMDCPropertyMap().get("application");
 		if (appName == null || appName.isEmpty()) {
 			appName = "RemoteApp";
 		}
 
-		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp,
-				event.getFormattedMessage(), appName, event.getFormattedMessage());
+		String message = event.getFormattedMessage();
+		if (event.getThrowableProxy() != null) {
+			message += "\n" + ch.qos.logback.classic.spi.ThrowableProxyUtil.asString(event.getThrowableProxy());
+		}
+
+		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp, port,
+				message, appName, message);
 	}
 
-	private LogEntry convertLog4j1(LoggingEvent event, String clientIp) {
+	private LogEntry convertLog4j1(LoggingEvent event, String clientIp, int port) {
 		LocalDateTime ts = LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getTimeStamp()), ZoneId.systemDefault());
 		String appName = (String) event.getMDC("application");
 		if (appName == null || appName.isEmpty()) {
 			appName = "RemoteApp";
 		}
 
-		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp,
-				event.getRenderedMessage(), appName, event.getRenderedMessage());
+		String message = event.getRenderedMessage();
+		String[] throwableStr = event.getThrowableStrRep();
+		if (throwableStr != null) {
+			message += "\n" + String.join("\n", throwableStr);
+		}
+
+		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp, port,
+				message, appName, message);
 	}
 
-	private LogEntry convertLog4j2(LogEvent event, String clientIp) {
+	private LogEntry convertLog4j2(LogEvent event, String clientIp, int port) {
 		LocalDateTime ts = LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getTimeMillis()), ZoneId.systemDefault());
 		String appName = event.getContextData().getValue("application");
 		if (appName == null || appName.isEmpty()) {
 			appName = "RemoteApp";
 		}
 
-		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp,
-				event.getMessage().getFormattedMessage(), appName, event.getMessage().getFormattedMessage());
+		String message = event.getMessage().getFormattedMessage();
+		Throwable thrown = event.getThrown();
+		if (thrown != null) {
+			java.io.StringWriter sw = new java.io.StringWriter();
+			java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+			thrown.printStackTrace(pw);
+			message += "\n" + sw.toString();
+		}
+
+		return new LogEntry(ts, event.getLevel().toString(), event.getThreadName(), event.getLoggerName(), clientIp, port,
+				message, appName, message);
 	}
 }
