@@ -56,7 +56,9 @@ public class UpdateService {
 
 		Path appJar;
 		try {
-			appJar = Paths.get(LogSyncPro.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			java.net.URI uri = LogSyncPro.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+			appJar = Paths.get(uri).toAbsolutePath();
+			de.in.lsp.util.LspLogger.info("Detected application path for updates: " + appJar);
 		} catch (URISyntaxException e) {
 			de.in.lsp.util.LspLogger.error("Failed to determine application JAR path", e);
 			throw new RuntimeException(e);
