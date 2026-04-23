@@ -50,6 +50,7 @@ public class LogView extends JInternalFrame {
     private boolean maximized = false;
     private String appName;
     private String clientIp;
+    private int remotePort;
     private String initialLoggerName;
     private ViewType viewType;
 
@@ -240,7 +241,7 @@ public class LogView extends JInternalFrame {
     public void scrollToTimestamp(LocalDateTime timestamp) {
         // Binary Search for nearest timestamp
         int index = Collections.binarySearch(entries,
-                new LogEntry(timestamp, null, null, null, null, null, null, null));
+                new LogEntry(timestamp, null, null, null, null, 0, null, null, null));
         if (index < 0) {
             index = -(index + 1);
         }
@@ -374,9 +375,10 @@ public class LogView extends JInternalFrame {
         return entries.stream().anyMatch(e -> e.timestamp() != null);
     }
 
-    public void setMetaData(String appName, String clientIp) {
+    public void setMetaData(String appName, String clientIp, int port) {
         this.appName = appName;
         this.clientIp = clientIp;
+        this.remotePort = port;
 
         // Hide IP column for remote views where IP is in title
         if (viewType == ViewType.TCP
@@ -392,6 +394,10 @@ public class LogView extends JInternalFrame {
 
     public String getClientIp() {
         return clientIp;
+    }
+
+    public int getRemotePort() {
+        return remotePort;
     }
 
     public void setInitialLoggerName(String initialLoggerName) {
