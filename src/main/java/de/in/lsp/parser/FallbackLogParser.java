@@ -28,7 +28,7 @@ public class FallbackLogParser implements LogParser {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				// Create a LogEntry with null/empty fields except for the message Timestamp, Level, Thread, Logger are null/UNKNOWN
-				entries.add(new LogEntry(null, "", "", "", "", line, sourceName, line));
+				entries.add(new LogEntry(null, "", "", "", "", 0, line, sourceName, line));
 			}
 		}
 		return entries;
