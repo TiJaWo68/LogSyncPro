@@ -162,7 +162,7 @@ public class PatternBasedLogParser implements LogParser {
 						// Flush header buffer if first match If this is the first match, flush header buffer as a single multi-line entry
 						if (lastEntry == null && !headerBuffer.isEmpty()) {
 							String combinedHeader = String.join("\n", headerBuffer);
-							entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName, combinedHeader));
+							entries.add(new LogEntry(null, "", "", "", "", 0, combinedHeader, sourceName, combinedHeader));
 							headerBuffer.clear();
 						}
 						entries.add(newEntry);
@@ -188,7 +188,7 @@ public class PatternBasedLogParser implements LogParser {
 			// If we NEVER found a match, but have headers, add them as one entry
 			if (lastEntry == null && !headerBuffer.isEmpty()) {
 				String combinedHeader = String.join("\n", headerBuffer);
-				entries.add(new LogEntry(null, "", "", "", "", combinedHeader, sourceName, combinedHeader));
+				entries.add(new LogEntry(null, "", "", "", "", 0, combinedHeader, sourceName, combinedHeader));
 			}
 		}
 		return entries;
@@ -226,7 +226,7 @@ public class PatternBasedLogParser implements LogParser {
 				String ip = (ipGroup != -1) ? matcher.group(ipGroup).trim() : "";
 				String message = (messageGroup != -1) ? matcher.group(messageGroup) : line;
 
-				return new LogEntry(ts, level, thread, logger, ip, message, sourceName, line);
+				return new LogEntry(ts, level, thread, logger, ip, 0, message, sourceName, line);
 			} catch (Exception e) {
 				// If parsing fails for a line that matches the regex, treat it as multiline if possible
 				if (lastEntry != null) {
