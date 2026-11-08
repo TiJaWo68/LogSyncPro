@@ -6,7 +6,7 @@
 
     <groupId>de.in.lsp</groupId>
     <artifactId>LogSyncPro</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
 
     <description>Advanced Log Viewer</description>
     <inceptionYear>2026</inceptionYear>

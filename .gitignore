@@ -13,3 +13,4 @@ target/
 /logs/
 /*.code-workspace
 /bin
+/plans/
