@@ -48,6 +48,18 @@ LogSyncPro unterstützt Startparameter zur Automatisierung:
     *   Unterstützt Wildcards (`*`) und Teilstring-Suche.
     *   Beispiel: `--fetch="default/gateway*,auth-service"`
 
+## 🔌 Empfänger (TCP-Log-Streams)
+
+LogSyncPro kann Live-Log-Streams über TCP empfangen:
+
+| Protokoll | Port | Beschreibung |
+| --- | --- | --- |
+| Universal (serialisiert) | 4444, 4445 | Serialisierte Events von Logback / Log4j 1.x / Log4j 2.x |
+| Logstash JSON | 4560 | Zeilenweises JSON (NDJSON), z. B. MoneyPoly `LogstashTcpSocketAppender` |
+| XML | 4561 | Log4j/Logback `XMLLayout`-Events |
+
+Zum Streamen der MoneyPoly-Logs `LOGGING_TCP_ENABLED=true`, `LOGGING_TCP_HOST=<LogSyncPro-Host>` und `LOGGING_TCP_PORT=4560` setzen.
+
 ## 🛠 Tech-Stack
 Engine: Java 21 (LTS)
 

@@ -33,7 +33,7 @@ public class ReceiverManager {
 	private void initReceivers() {
 		receivers.add(new UniversalSerializedReceiver(4445, this::handleIncomingLogEntry));
 		receivers.add(new UniversalSerializedReceiver(4444, this::handleIncomingLogEntry));
-		receivers.add(new UniversalSerializedReceiver(4560, this::handleIncomingLogEntry));
+		receivers.add(new LogstashJsonReceiver(4560, this::handleIncomingLogEntry));
 		receivers.add(new XmlReceiver(4561, this::handleIncomingLogEntry));
 		// Port 10000/10001 (Lilith Multiplex) could be added here later
 	}
